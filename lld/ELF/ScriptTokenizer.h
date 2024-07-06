@@ -5,14 +5,18 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+//
+// This file defines the nums for LinkerScript lexer
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef LLD_ELF_SCRIPT_TOKENIZER_H
 #define LLD_ELF_SCRIPT_TOKENIZER_H
 
-namespace lld::elf {
-enum CommandTokens {
-  // Entry point
-  ENTRY, // ENTRY
+namespace lld {
+namespace elf {
+enum Tokens {
+  ENTRY,
 
   // Commands Files
   INCLUDE,
@@ -22,8 +26,8 @@ enum CommandTokens {
   SEARCH_DIR,
   STARTUP,
 
-  INSERT, // TODO
-  AFTER,  // TODO
+  INSERT,
+  AFTER,
 
   // Commands for object file formats
   OUTPUT_FORMAT,
@@ -35,15 +39,15 @@ enum CommandTokens {
   // FORCE_COMMON_ALLOCATION
   // INHIBIT_COMMON_ALLOCATION
   // NOCROSSREFS
-  OUTPUT_ARCH
+  OUTPUT_ARCH,
 
-      // Assignment
-      PROVIDE,
+  // Assignment
+  PROVIDE,
   HIDDEN,
   PROVIDE_HIDDEN,
 
-  // Section Command
   SECTIONS,
+
   // Input Section
   EXCLUDE_FILE,
   KEEP,
@@ -53,19 +57,17 @@ enum CommandTokens {
   OVERLAY,
   NOLOAD,
   COPY,
-  INFO
+  INFO,
 
-      // Output Section
-      OUTPUT,
-
-  OVERWRITE_SECTIONS // TODO
-
-      ALIGN, // TODO
+  // Output Section
+  OUTPUT,
+  OVERWRITE_SECTIONS,
+  ALIGN,
   SUBALIGN,
   ONLY_IF_RO,
   ONLY_IF_RW,
-  FILL, // TODO
-  SORT, //
+  FILL,
+  SORT,
 
   // Builtin Functions
   ABSOLUTE,
@@ -76,19 +78,20 @@ enum CommandTokens {
   DATA_SEGMENT_END,
   DEFINED,
   LOADADDR,
-  LOG2CEIL, // TODO
+
+  LOG2CEIL,
   MAX,
   MIN,
-  ORIGIN,        // TODO
-  SEGMENT_START, // TODO
+  ORIGIN,
+  SEGMENT_START,
   // NEXT, // This function is closely related to ALIGN(exp); unless you use the
   // MEMORY command to define discontinuous memory for the output file, the two
   // functions are equivalent.
   SIZEOF,
-  SIZEOF_HEADERS
+  SIZEOF_HEADERS,
 
-      // PHDRS Command
-      FILEHDR,
+  // PHDRS Command
+  FILEHDR,
   PHDRS,
   AT,
   FLAGS,
@@ -96,24 +99,22 @@ enum CommandTokens {
   // Version Command
   VERSION,
 
-  REGION_ALIAS   // TODO
-      AS_NEEDED, // TODO
-  CONSTRUCTORS,  // TODO: readsort?
-}
+  REGION_ALIAS,
+  AS_NEEDED,
+  CONSTRUCTORS,
 
-enum labelTokens {
+  // Symbolic Constants
+  MAXPAGESIZE,
+  COMMONPAGESIZE,
+
   Local,  // local
   Global, // global
   Extern, // extern
-}
 
-enum TargetType {
   ELF,
   Binary,
-  Error
-}
+  Error,
 
-enum SymbolTokens {
   CurlyBegin,   // {
   CurlyEnd,     // }
   BracektBegin, // (
@@ -125,18 +126,15 @@ enum SymbolTokens {
   QuestionMark, // ?
   Bacckslash,   // "\"
   Slash,        // /
-  Greater       // >
-      Less,     // <
+  Greater,      // >
+  Less,         // <
   Minus,        // -
   Plus,         // +
   Bitwise,      // &
   Not,          // ^
   VerticalBar,  // |
   PercentSign,  // %
-  // TODO:: operator
-}
 
-enum AssignmentSymbols {
   // Assignmemnt
   Assign,           // =
   PlusAssign,       // +=
@@ -148,6 +146,7 @@ enum AssignmentSymbols {
   BitWiseAssign,    // &=
   BarAssign         // |=
 }
-} // namespace lld::elf
+} // namespace elf
+} // namespace lld
 
 #endif // LLD_ELF_SCRIPT_TOKENIZER_H
