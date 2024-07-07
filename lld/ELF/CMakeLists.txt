@@ -47,6 +47,7 @@ add_lld_library(lldELF
   InputSection.cpp
   LTO.cpp
   LinkerScript.cpp
+  LinkerScriptLexer.cpp
   MapFile.cpp
   MarkLive.cpp
   OutputSections.cpp

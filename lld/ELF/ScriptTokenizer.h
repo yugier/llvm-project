@@ -15,7 +15,7 @@
 
 namespace lld {
 namespace elf {
-enum Tokens {
+enum ScriptToken {
   ENTRY,
 
   // Commands Files
@@ -60,9 +60,7 @@ enum Tokens {
   INFO,
 
   // Output Section
-  OUTPUT,
   OVERWRITE_SECTIONS,
-  ALIGN,
   SUBALIGN,
   ONLY_IF_RO,
   ONLY_IF_RW,
@@ -145,7 +143,7 @@ enum Tokens {
   RightShiftAssign, // >>=
   BitWiseAssign,    // &=
   BarAssign         // |=
-}
+};
 } // namespace elf
 } // namespace lld
 
