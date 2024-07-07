@@ -20,11 +20,14 @@ namespace lld::elf {
 class LinkerScriptLexer {
 public:
   explicit LinkerScriptLexer(MemoryBufferRef MB);
-  ScriptToken getScriptToken();
 
 private:
+  const char *curPtr;
+  llvm::StringRef curStringRef;
   size_t pos = 0;
   unsigned getNextChar();
+
+  ScriptToken getToken();
 };
 } // namespace lld::elf
 

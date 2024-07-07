@@ -15,8 +15,48 @@ using namespace llvm;
 using namespace lld;
 using namespace lld::elf;
 
-LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB) {}
+LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB) {
+  curStringRef = MB.getBuffer();
+}
 
-ScriptToken LinkerScriptLexer::getScriptToken() { return ScriptToken::ENTRY; }
+ScriptToken LinkerScriptLexer::getToken() {
+  while (true) {
+    int curChar = getNextChar();
 
-unsigned LinkerScriptLexer::getNextChar() { return 0; }
+    switch (curChar) {
+    case 'A' ... 'Z':
+    case 'a' ... 'z':
+      // TODO
+      break;
+    case '0' ... '9':
+      // TODO
+      break;
+    case '{':
+      return ScriptToken::CurlyBegin;
+    case '}':
+      return ScriptToken::CurlyEnd;
+    case '?':
+      return ScriptToken::QuestionMark;
+    case '(':
+      return ScriptToken::BracektBegin;
+    case ')':
+      return ScriptToken::BracektEnd;
+    }
+  }
+}
+
+unsigned LinkerScriptLexer::getNextChar() {
+  char curChar = *curPtr;
+  switch (curChar) {
+  case 0:
+    if (curPtr != curStringRef.end()) {
+      curPtr++;
+      return 0;
+    } else {
+      return EOF;
+    }
+  default:
+    curPtr++;
+    return (unsigned char)curChar;
+  }
+}
