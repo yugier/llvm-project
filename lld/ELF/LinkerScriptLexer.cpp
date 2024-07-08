@@ -8,15 +8,26 @@
 
 #include "LinkerScriptLexer.h"
 #include "lld/Common/ErrorHandler.h"
-#include "llvm/ADT/Twine.h"
 #include "llvm/Support/ErrorHandling.h"
 
 using namespace llvm;
 using namespace lld;
 using namespace lld::elf;
 
-LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB) {
+LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
+                                     llvm::SMDiagnostic &Err)
+    : ErrorInfo(Err), SM(SM) {
   curStringRef = MB.getBuffer();
+  curPtr = curStringRef.begin();
+}
+
+bool LinkerScriptLexer::Error(SMLoc ErrorLoc, const Twine &Msg) const {
+  ErrorInfo = SM.GetMessage(ErrorLoc, llvm::SourceMgr::DK_Error, Msg);
+  return true;
+}
+
+void LinkerScriptLexer::Warning(SMLoc WarningLoc, const Twine &Msg) const {
+  SM.PrintMessage(WarningLoc, llvm::SourceMgr::DK_Warning, Msg);
 }
 
 ScriptToken LinkerScriptLexer::getToken() {
@@ -30,7 +41,6 @@ ScriptToken LinkerScriptLexer::getToken() {
     case '\r':
       continue; // ignore whitespace
       // TODO
-      break;
     case '0':
     case '1':
     case '2':
