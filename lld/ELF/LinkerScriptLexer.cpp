@@ -24,11 +24,23 @@ ScriptToken LinkerScriptLexer::getToken() {
     int curChar = getNextChar();
 
     switch (curChar) {
-    case 'A' ... 'Z':
-    case 'a' ... 'z':
+    case ' ':
+    case '\n':
+    case '\t':
+    case '\r':
+      continue; // ignore whitespace
       // TODO
       break;
-    case '0' ... '9':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
       // TODO
       break;
     case '{':
@@ -41,22 +53,33 @@ ScriptToken LinkerScriptLexer::getToken() {
       return ScriptToken::BracektBegin;
     case ')':
       return ScriptToken::BracektEnd;
+    case '=':
+      return ScriptToken::Assign;
+    case '+':
+      return ScriptToken::Plus;
+    default:
+      // default for [A-Z][a-z]
+      break;
     }
   }
 }
 
 unsigned LinkerScriptLexer::getNextChar() {
-  char curChar = *curPtr;
+  char curChar = curStringRef[pos];
   switch (curChar) {
   case 0:
-    if (curPtr != curStringRef.end()) {
-      curPtr++;
+    if (pos < curStringRef.size()) {
+      pos++;
       return 0;
     } else {
       return EOF;
     }
   default:
-    curPtr++;
+    pos++;
     return (unsigned char)curChar;
   }
+}
+
+ScriptToken LinkerScriptLexer::getCommandOrSymbolName() {
+  return ScriptToken::SymbolName;
 }

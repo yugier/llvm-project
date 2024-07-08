@@ -28,6 +28,9 @@ private:
   unsigned getNextChar();
 
   ScriptToken getToken();
+  ScriptToken getIdentify();
+  ScriptToken getArithmeticOrAssignment();
+  ScriptToken getCommandOrSymbolName();
 };
 } // namespace lld::elf
 

@@ -15,7 +15,7 @@
 
 namespace lld {
 namespace elf {
-enum ScriptToken {
+enum class ScriptToken {
   ENTRY,
 
   // Commands Files
@@ -112,6 +112,9 @@ enum ScriptToken {
   ELF,
   Binary,
   Error,
+
+  SymbolName,
+  FileName,
 
   CurlyBegin,   // {
   CurlyEnd,     // }
