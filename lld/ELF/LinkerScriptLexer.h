@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLD_ELF_LINKER_SCRIPT_Lexer_H
-#define LLD_ELF_LINKER_SCRIPT_Lexer_H
+#ifndef LLD_ELF_LINKER_SCRIPT_LEXER_H
+#define LLD_ELF_LINKER_SCRIPT_LEXER_H
 
 #include "ScriptTokenizer.h"
 #include "lld/Common/LLVM.h"
@@ -32,22 +32,22 @@ public:
   void Warning(llvm::SMLoc WarningLoc, const llvm::Twine &Msg) const;
   void Warning(const Twine &Msg) const { return Warning(getLoc(), Msg); }
 
+  void checkToken(ScriptToken token);
+
 private:
   llvm::SMDiagnostic &ErrorInfo;
   llvm::SourceMgr &SM;
   const char *curPtr;
+  llvm::MemoryBufferRef MB;
   llvm::StringRef curStringRef;
 
   const char *tokStart;
-  size_t pos = 0;
-  unsigned getNextChar();
 
-  void skipComment();
+  llvm::StringRef skipComments();
   ScriptToken getToken();
-  ScriptToken getIdentify();
   ScriptToken getArithmeticOrAssignment();
   ScriptToken getCommandOrSymbolName();
 };
 } // namespace lld::elf
 
-#endif // LLD_ELF_LINKER_SCRIPT_Lexer_H
+#endif // LLD_ELF_LINKER_SCRIPT_LEXER_H
