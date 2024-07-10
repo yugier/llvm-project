@@ -32,7 +32,70 @@ void LinkerScriptLexer::Warning(SMLoc WarningLoc, const Twine &Msg) const {
 
 ScriptToken LinkerScriptLexer::getToken() {
   while (true) {
-    skipComments();
+    curStringRef = skipComments();
+
+    // Quoted token. Note that double-quote characters are parts of a token
+    // because, in a glob match context, only unquoted tokens are interpreted as
+    // glob patterns. Double-quoted tokens are literal patterns in that context.
+    if (curStringRef.starts_with("\"")) {
+      size_t e = curStringRef.find("\"", 1);
+      if (e == StringRef::npos) {
+        StringRef fileName = MB.getBufferIdentifier();
+        Error(fileName + ": unclosed quote");
+        return ScriptToken::Error;
+      }
+      llvm::StringRef quotedRef = curStringRef.take_front(e + 1);
+      // TODO: need a function to tell if quotedRef is a keyword or not
+      // and return ScriptToken
+      curStringRef = curStringRef.substr(e + 1);
+      continue;
+    }
+
+    // Unquoted token. This is more relaxed than tokens in C-like language,
+    // so that you can write "file-name.cpp" as one bare token, for example.
+    size_t pos = curStringRef.find_first_not_of(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        "0123456789_.$/\\~=+[]*?-!^:");
+    // TODO: a new function for this for keeping the code clean
+    if (pos == 0) {
+      // single char
+
+      const char *curChar = curStringRef.begin();
+      switch (*curChar) {
+      case EOF:
+        return ScriptToken::Eof;
+      case '(':
+        return ScriptToken::BracektBegin;
+      case ')':
+        return ScriptToken::BracektEnd;
+      case '{':
+        return ScriptToken::CurlyBegin;
+      case '}':
+        return ScriptToken::CurlyEnd;
+      case ';':
+        return ScriptToken::Semicolon;
+      case ',':
+        return ScriptToken::Comma;
+      case ':':
+        return ScriptToken::Colon;
+      case '*':
+      case '/':
+      case '+':
+      case '-':
+      case '<':
+      case '>':
+      case '&':
+      case '^':
+      case '|':
+      default:
+        // TODO
+        break;
+      }
+    } else {
+      // TODO: COMMAND / user defined symbol/file name match
+    }
+
+    return ScriptToken::Error;
   }
 }
 
@@ -43,18 +106,28 @@ llvm::StringRef LinkerScriptLexer::skipComments() {
     if (curStringRef.starts_with("/*")) {
       size_t e = curStringRef.find("*/", 2);
       if (e == llvm::StringRef::npos) {
-        // TODO: set up error message
+        Error("Unclosed comment in a linker script");
+        return "";
       }
       curStringRef = curStringRef.substr(e + 2);
       continue;
     }
     if (curStringRef.starts_with("#")) {
       size_t e = curStringRef.find("\n", 1);
+      if (e == StringRef::npos)
+        e = curStringRef.size() - 1;
+      curStringRef = curStringRef.substr(e + 1);
+      continue;
     }
+
+    size_t size = curStringRef.size();
+    curStringRef = curStringRef.ltrim();
+    if (curStringRef.size() == size)
+      return curStringRef;
   }
 }
 
 ScriptToken LinkerScriptLexer::getCommandOrSymbolName() {
-
+  // TODO: use marco like .ll AsmLexer
   return ScriptToken::SymbolName;
 }

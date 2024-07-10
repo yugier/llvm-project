@@ -16,102 +16,103 @@
 namespace lld {
 namespace elf {
 enum class ScriptToken {
-  ENTRY,
+  LS_ENTRY,
 
   // Commands Files
-  INCLUDE,
-  INPUT,
-  GROUP,
-  OUTPUT,
-  SEARCH_DIR,
-  STARTUP,
+  LS_INCLUDE,
+  LS_INPUT,
+  LS_GROUP,
+  LS_OUTPUT,
+  LS_SEARCH_DIR,
+  LS_STARTUP,
 
-  INSERT,
-  AFTER,
+  LS_INSERT,
+  LS_AFTER,
 
   // Commands for object file formats
-  OUTPUT_FORMAT,
-  TARGET,
+  LS_OUTPUT_FORMAT,
+  LS_TARGET,
 
   // Other linker script commands
-  ASSERT,
-  EXTERN,
+  LS_ASSERT,
+  LS_EXTERN,
   // FORCE_COMMON_ALLOCATION
   // INHIBIT_COMMON_ALLOCATION
   // NOCROSSREFS
-  OUTPUT_ARCH,
+  LS_OUTPUT_ARCH,
 
   // Assignment
-  PROVIDE,
-  HIDDEN,
-  PROVIDE_HIDDEN,
+  LS_PROVIDE,
+  LS_HIDDEN,
+  LS_PROVIDE_HIDDEN,
 
-  SECTIONS,
+  LS_SECTIONS,
 
   // Input Section
-  EXCLUDE_FILE,
-  KEEP,
-  INPUT_SECTION_FLAGS,
+  LS_EXCLUDE_FILE,
+  LS_KEEP,
+  LS_INPUT_SECTION_FLAGS,
 
   // Read section
-  OVERLAY,
-  NOLOAD,
-  COPY,
-  INFO,
+  LS_OVERLAY,
+  LS_NOLOAD,
+  LS_COPY,
+  LS_INFO,
 
   // Output Section
-  OVERWRITE_SECTIONS,
-  SUBALIGN,
-  ONLY_IF_RO,
-  ONLY_IF_RW,
-  FILL,
-  SORT,
+  LS_OVERWRITE_SECTIONS,
+  LS_SUBALIGN,
+  LS_ONLY_IF_RO,
+  LS_ONLY_IF_RW,
+  LS_FILL,
+  LS_SORT,
 
   // Builtin Functions
-  ABSOLUTE,
-  ADDR,
-  ALIGN,
+  LS_ABSOLUTE,
+  LS_ADDR,
+  LS_ALIGN,
   // BLOCK, // synonym for ALIGN for compatibility with older linker script
-  DATA_SEGMENT_ALIGN,
-  DATA_SEGMENT_END,
-  DEFINED,
-  LOADADDR,
+  LS_DATA_SEGMENT_ALIGN,
+  LS_DATA_SEGMENT_END,
+  LS_DEFINED,
+  LS_LOADADDR,
 
-  LOG2CEIL,
-  MAX,
-  MIN,
-  ORIGIN,
-  SEGMENT_START,
+  LS_LOG2CEIL,
+  LS_MAX,
+  LS_MIN,
+  LS_ORIGIN,
+  LS_SEGMENT_START,
   // NEXT, // This function is closely related to ALIGN(exp); unless you use the
   // MEMORY command to define discontinuous memory for the output file, the two
   // functions are equivalent.
-  SIZEOF,
-  SIZEOF_HEADERS,
+  LS_SIZEOF,
+  LS_SIZEOF_HEADERS,
 
   // PHDRS Command
-  FILEHDR,
-  PHDRS,
-  AT,
-  FLAGS,
+  LS_FILEHDR,
+  LS_PHDRS,
+  LS_AT,
+  LS_FLAGS,
 
   // Version Command
-  VERSION,
+  LS_VERSION,
 
-  REGION_ALIAS,
-  AS_NEEDED,
-  CONSTRUCTORS,
+  LS_REGION_ALIAS,
+  LS_AS_NEEDED,
+  LS_CONSTRUCTORS,
 
   // Symbolic Constants
-  MAXPAGESIZE,
-  COMMONPAGESIZE,
+  LS_MAXPAGESIZE,
+  LS_COMMONPAGESIZE,
 
-  Local,  // local
-  Global, // global
-  Extern, // extern
+  LS_Local,  // local
+  LS_Global, // global
+  LS_Extern, // extern
 
-  ELF,
-  Binary,
+  LS_ELF,
+  LS_Binary,
   Error,
+  Eof,
 
   SymbolName,
   FileName,
@@ -125,7 +126,7 @@ enum class ScriptToken {
   Colon,        // :
   Asterisk,     // *
   QuestionMark, // ?
-  Bacckslash,   // "\"
+  Backslash,    // "\"
   Slash,        // /
   Greater,      // >
   Less,         // <
@@ -145,7 +146,15 @@ enum class ScriptToken {
   LeftShiftAssign,  // <<=
   RightShiftAssign, // >>=
   BitWiseAssign,    // &=
-  BarAssign         // |=
+  BarAssign,        // |=
+
+  // operator token
+  NotEqual,   // !=
+  Equal,      // ==
+  GreatEqual, // >=
+  LessEqual,  // <=
+  LeftShift,  // <<
+  RightShift, // >>
 };
 } // namespace elf
 } // namespace lld

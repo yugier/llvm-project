@@ -26,11 +26,15 @@ class LinkerScriptLexer {
 public:
   explicit LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
                              llvm::SMDiagnostic &Err);
-  llvm::SMLoc getLoc() const { return llvm::SMLoc::getFromPointer(tokStart); }
+  llvm::SMLoc getLoc() const {
+    return llvm::SMLoc::getFromPointer(curStringRef.begin());
+  }
   bool Error(llvm::SMLoc ErrorLoc, const llvm::Twine &Msg) const;
   bool Error(const llvm::Twine &Msg) const { return Error(getLoc(), Msg); }
   void Warning(llvm::SMLoc WarningLoc, const llvm::Twine &Msg) const;
   void Warning(const Twine &Msg) const { return Warning(getLoc(), Msg); }
+
+  const std::string &getStrVal() const { return strVal; }
 
   void checkToken(ScriptToken token);
 
@@ -40,6 +44,7 @@ private:
   const char *curPtr;
   llvm::MemoryBufferRef MB;
   llvm::StringRef curStringRef;
+  std::string strVal;
 
   const char *tokStart;
 
