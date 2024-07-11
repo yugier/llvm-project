@@ -34,24 +34,36 @@ public:
   void Warning(llvm::SMLoc WarningLoc, const llvm::Twine &Msg) const;
   void Warning(const Twine &Msg) const { return Warning(getLoc(), Msg); }
 
-  const std::string &getStrVal() const { return strVal; }
+  ScriptToken next();  // update tok1 and tok2
+  ScriptToken peek();  // return tok1
+  ScriptToken peek2(); // return tok2
 
-  void checkToken(ScriptToken token);
+  const std::string &getTok1Val() const { return tok1Val; }
+  const std::string &getTok2Val() const { return tok2Val; }
+
+  bool expect(ScriptToken token); // check if tok1 matches argument token
+  bool inExpression = false;
 
 private:
   llvm::SMDiagnostic &ErrorInfo;
   llvm::SourceMgr &SM;
+
   const char *curPtr;
   llvm::MemoryBufferRef MB;
+
   llvm::StringRef curStringRef;
-  std::string strVal;
+  ScriptToken tok1;
+  ScriptToken tok2;
+  size_t tok1Pos = 0;
+  size_t tok2Pos = 0;
+  std::string tok1Val;
+  std::string tok2Val;
 
   const char *tokStart;
 
   llvm::StringRef skipComments();
   ScriptToken getToken();
-  ScriptToken getArithmeticOrAssignment();
-  ScriptToken getCommandOrSymbolName();
+  ScriptToken getCommandOrIdentify(size_t pos);
 };
 } // namespace lld::elf
 

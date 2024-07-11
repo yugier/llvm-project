@@ -19,6 +19,7 @@ LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
     : MB(MB), ErrorInfo(Err), SM(SM) {
   curStringRef = MB.getBuffer();
   curPtr = curStringRef.begin();
+  // TODO: set up the start for tok1 and tok2
 }
 
 bool LinkerScriptLexer::Error(SMLoc ErrorLoc, const Twine &Msg) const {
@@ -29,6 +30,21 @@ bool LinkerScriptLexer::Error(SMLoc ErrorLoc, const Twine &Msg) const {
 void LinkerScriptLexer::Warning(SMLoc WarningLoc, const Twine &Msg) const {
   SM.PrintMessage(WarningLoc, llvm::SourceMgr::DK_Warning, Msg);
 }
+
+ScriptToken LinkerScriptLexer::next() {
+  tok1 = tok2;
+  tok1Pos = tok2Pos;
+  tok1Val = tok2Val;
+
+  tok2 = getToken();
+  return tok1;
+}
+
+ScriptToken LinkerScriptLexer::peek() { return tok1; }
+
+ScriptToken LinkerScriptLexer::peek2() { return tok2; }
+
+bool LinkerScriptLexer::expect(ScriptToken token) { return token == tok1; }
 
 ScriptToken LinkerScriptLexer::getToken() {
   while (true) {
@@ -51,49 +67,108 @@ ScriptToken LinkerScriptLexer::getToken() {
       continue;
     }
 
-    // Unquoted token. This is more relaxed than tokens in C-like language,
-    // so that you can write "file-name.cpp" as one bare token, for example.
-    size_t pos = curStringRef.find_first_not_of(
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-        "0123456789_.$/\\~=+[]*?-!^:");
-    // TODO: a new function for this for keeping the code clean
-    if (pos == 0) {
-      // single char
-
-      const char *curChar = curStringRef.begin();
-      switch (*curChar) {
-      case EOF:
-        return ScriptToken::Eof;
-      case '(':
-        return ScriptToken::BracektBegin;
-      case ')':
-        return ScriptToken::BracektEnd;
-      case '{':
-        return ScriptToken::CurlyBegin;
-      case '}':
-        return ScriptToken::CurlyEnd;
-      case ';':
-        return ScriptToken::Semicolon;
-      case ',':
-        return ScriptToken::Comma;
-      case ':':
-        return ScriptToken::Colon;
-      case '*':
-      case '/':
-      case '+':
-      case '-':
-      case '<':
-      case '>':
-      case '&':
-      case '^':
-      case '|':
-      default:
-        // TODO
-        break;
+    const char *curChar = curStringRef.begin();
+    switch (*curChar) {
+    case EOF:
+      return ScriptToken::Eof;
+    case '(':
+      return ScriptToken::BracektBegin;
+    case ')':
+      return ScriptToken::BracektEnd;
+    case '{':
+      return ScriptToken::CurlyBegin;
+    case '}':
+      return ScriptToken::CurlyEnd;
+    case ';':
+      return ScriptToken::Semicolon;
+    case ',':
+      return ScriptToken::Comma;
+    case '<':
+      if (curStringRef.size() > 2 && curStringRef[1] == '<' &&
+          curStringRef[2] == '=') {
+        curStringRef = curStringRef.substr(3);
+        return ScriptToken::RightShiftAssign;
       }
-    } else {
-      // TODO: COMMAND / user defined symbol/file name match
-    }
+      if (curStringRef.size() > 1) {
+        if (curStringRef[1] == '=') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::LessEqual;
+        } else if (curStringRef[1] == '<') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::LeftShift;
+        }
+      }
+      curStringRef = curStringRef.substr(1);
+      return ScriptToken::Less;
+    case '>':
+      if (curStringRef.size() > 2 && curStringRef[1] == '>' &&
+          curStringRef[2] == '=') {
+        curStringRef = curStringRef.substr(3);
+        return ScriptToken::LeftShiftAssign;
+      }
+      if (curStringRef.size() > 1) {
+        if (curStringRef[1] == '=') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::GreaterEqual;
+        } else if (curStringRef[1] == '>') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::RightShift;
+        }
+      }
+      curStringRef = curStringRef.substr(1);
+      return ScriptToken::Greater;
+    case '&':
+      if (curStringRef.size() > 1) {
+        if (curStringRef[1] == '=') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::AndAssign;
+        } else if (curStringRef[1] == '&') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::AndGate;
+        }
+      }
+      curStringRef = curStringRef.substr(1);
+      return ScriptToken::Bitwise;
+    case '^':
+      if (curStringRef.size() > 1) {
+        if (curStringRef[1] == '=') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::AndAssign;
+        }
+      }
+      curStringRef = curStringRef.substr(1);
+      return ScriptToken::Xor;
+    case '|':
+      if (curStringRef.size() > 1) {
+        if (curStringRef[1] == '=') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::OrAssign;
+        } else if (curStringRef[1] == '|') {
+          curStringRef = curStringRef.substr(2);
+          return ScriptToken::OrGate;
+        }
+      }
+      curStringRef = curStringRef.substr(1);
+      return ScriptToken::Or;
+    default:
+      // Unquoted token. This is more relaxed than tokens in C-like language,
+      // so that you can write "file-name.cpp" as one bare token, for example.
+      size_t pos = curStringRef.find_first_not_of(
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+          "0123456789_.$/\\~=+[]*?-!^:");
+
+      // Quoted strings are literal strings, so we don't want to split it.
+      if (inExpression && !curStringRef.starts_with("\"")) {
+        StringRef ops = "!~*/+-<>?^:="; // List of operators
+        size_t e = curStringRef.find_first_of(ops);
+        if (e != StringRef::npos && e != 0) {
+          curStringRef = curStringRef.substr(e);
+          return ScriptToken::Identify;
+        }
+      }
+      curStringRef = curStringRef.substr(pos);
+      return ScriptToken::Identify;
+    };
 
     return ScriptToken::Error;
   }
@@ -127,7 +202,6 @@ llvm::StringRef LinkerScriptLexer::skipComments() {
   }
 }
 
-ScriptToken LinkerScriptLexer::getCommandOrSymbolName() {
-  // TODO: use marco like .ll AsmLexer
-  return ScriptToken::SymbolName;
+ScriptToken LinkerScriptLexer::getCommandOrIdentify(size_t pos) {
+  return ScriptToken::Identify;
 }

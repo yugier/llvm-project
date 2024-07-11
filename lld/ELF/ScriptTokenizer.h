@@ -114,8 +114,7 @@ enum class ScriptToken {
   Error,
   Eof,
 
-  SymbolName,
-  FileName,
+  Identify,
 
   CurlyBegin,   // {
   CurlyEnd,     // }
@@ -133,8 +132,8 @@ enum class ScriptToken {
   Minus,        // -
   Plus,         // +
   Bitwise,      // &
-  Not,          // ^
-  VerticalBar,  // |
+  Xor,          // ^
+  Or,           // |
   PercentSign,  // %
 
   // Assignmemnt
@@ -145,16 +144,19 @@ enum class ScriptToken {
   DivAssign,        // /=
   LeftShiftAssign,  // <<=
   RightShiftAssign, // >>=
-  BitWiseAssign,    // &=
-  BarAssign,        // |=
+  AndAssign,        // &=
+  OrAssign,         // |=
+  XorAssign,        // ^=
 
   // operator token
-  NotEqual,   // !=
-  Equal,      // ==
-  GreatEqual, // >=
-  LessEqual,  // <=
-  LeftShift,  // <<
-  RightShift, // >>
+  NotEqual,     // !=
+  Equal,        // ==
+  GreaterEqual, // >=
+  LessEqual,    // <=
+  LeftShift,    // <<
+  RightShift,   // >>
+  AndGate,      // &&
+  OrGate,       // ||
 };
 } // namespace elf
 } // namespace lld
