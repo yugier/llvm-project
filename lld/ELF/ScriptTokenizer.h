@@ -16,6 +16,7 @@
 namespace lld {
 namespace elf {
 enum class ScriptToken {
+  // LS stands for LinkerScript
   LS_ENTRY,
 
   // Commands Files
@@ -115,7 +116,13 @@ enum class ScriptToken {
   Eof,
 
   Identify,
+  Hexdecimal,   // 0x
+  Hexdecimal_H, // end with H/h
+  Decimal,
+  Decimal_K, // end with K/k
+  Decimal_M, // end with M/m
 
+  // Symbol tokens
   CurlyBegin,   // {
   CurlyEnd,     // }
   BracektBegin, // (
@@ -135,6 +142,9 @@ enum class ScriptToken {
   Xor,          // ^
   Or,           // |
   PercentSign,  // %
+  Quote, // Quoted token. Note that double-quote characters are parts of a token
+  // because, in a glob match context, only unquoted tokens are interpreted as
+  // glob patterns. Double-quoted tokens are literal patterns in that context.
 
   // Assignmemnt
   Assign,           // =

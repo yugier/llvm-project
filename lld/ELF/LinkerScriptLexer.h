@@ -26,44 +26,46 @@ class LinkerScriptLexer {
 public:
   explicit LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
                              llvm::SMDiagnostic &Err);
-  llvm::SMLoc getLoc() const {
+  struct TokenInfo {
+    ScriptToken kind;
+    llvm::StringRef val;
+  };
+
+  // LLVM SourceMgr and SMDiagnostic cannot be used now since
+  // ctx CommonLinkerContext has ownership of all MemoryBuffer
+  // by using SmallVector<MemoryBuffer>> memoryBuffers in ELF/Config.h
+  /*llvm::SMLoc getLoc() const {
     return llvm::SMLoc::getFromPointer(curStringRef.begin());
   }
+
   bool Error(llvm::SMLoc ErrorLoc, const llvm::Twine &Msg) const;
   bool Error(const llvm::Twine &Msg) const { return Error(getLoc(), Msg); }
   void Warning(llvm::SMLoc WarningLoc, const llvm::Twine &Msg) const;
-  void Warning(const Twine &Msg) const { return Warning(getLoc(), Msg); }
-
-  ScriptToken next();  // update tok1 and tok2
-  ScriptToken peek();  // return tok1
-  ScriptToken peek2(); // return tok2
-
-  const std::string &getTok1Val() const { return tok1Val; }
-  const std::string &getTok2Val() const { return tok2Val; }
+  void Warning(const Twine &Msg) const { return Warning(getLoc(), Msg); }*/
 
   bool expect(ScriptToken token); // check if tok1 matches argument token
   bool inExpression = false;
 
+  // TODO: rewrite next(), peek(), and peek2() since TokenInfo change
+
 private:
   llvm::SMDiagnostic &ErrorInfo;
   llvm::SourceMgr &SM;
-
-  const char *curPtr;
   llvm::MemoryBufferRef MB;
-
   llvm::StringRef curStringRef;
-  ScriptToken tok1;
-  ScriptToken tok2;
-  size_t tok1Pos = 0;
-  size_t tok2Pos = 0;
-  std::string tok1Val;
-  std::string tok2Val;
 
-  const char *tokStart;
+  // ScriptToken tok1;
+  // ScriptToken tok2;
+  // size_t tok1Pos = 0;
+  // size_t tok2Pos = 0;
 
   llvm::StringRef skipComments();
-  ScriptToken getToken();
-  ScriptToken getCommandOrIdentify(size_t pos);
+  TokenInfo advanceTokenInfo(ScriptToken kind, size_t pos);
+  TokenInfo getTokenInfo();
+  TokenInfo getSymbolToken();
+  TokenInfo getQuotedToken();
+  TokenInfo getDigits();
+  TokenInfo getCommandOrIdentify();
 };
 } // namespace lld::elf
 
