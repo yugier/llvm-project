@@ -26,10 +26,6 @@ class LinkerScriptLexer {
 public:
   explicit LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
                              llvm::SMDiagnostic &Err);
-  struct TokenInfo {
-    ScriptToken kind;
-    llvm::StringRef val;
-  };
 
   // LLVM SourceMgr and SMDiagnostic cannot be used now since
   // ctx CommonLinkerContext has ownership of all MemoryBuffer
@@ -47,17 +43,21 @@ public:
   bool inExpression = false;
 
   // TODO: rewrite next(), peek(), and peek2() since TokenInfo change
+  void advanceLexer();
+  const ScriptToken getTokenKind() const { return curToken.kind; };
+  llvm::StringRef getTokenStringRef() const { return curToken.val; };
 
 private:
+  struct TokenInfo {
+    ScriptToken kind;
+    llvm::StringRef val;
+  };
+
+  TokenInfo curToken;
   llvm::SMDiagnostic &ErrorInfo;
   llvm::SourceMgr &SM;
   llvm::MemoryBufferRef MB;
   llvm::StringRef curStringRef;
-
-  // ScriptToken tok1;
-  // ScriptToken tok2;
-  // size_t tok1Pos = 0;
-  // size_t tok2Pos = 0;
 
   llvm::StringRef skipComments();
   TokenInfo advanceTokenInfo(ScriptToken kind, size_t pos);
@@ -66,6 +66,7 @@ private:
   TokenInfo getQuotedToken();
   TokenInfo getDigits();
   TokenInfo getCommandOrIdentify();
+  ScriptToken getTokenfromKeyword(llvm::StringRef keyword) const;
 };
 } // namespace lld::elf
 

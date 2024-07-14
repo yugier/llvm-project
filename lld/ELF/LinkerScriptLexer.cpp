@@ -33,6 +33,8 @@ void LinkerScriptLexer::Warning(SMLoc WarningLoc, const Twine &Msg) const {
 
 // bool LinkerScriptLexer::expect(ScriptToken token) { return token == tok1; }
 
+void LinkerScriptLexer::advanceLexer() { curToken = getTokenInfo(); }
+
 inline LinkerScriptLexer::TokenInfo
 LinkerScriptLexer::advanceTokenInfo(ScriptToken kind, size_t pos = 1) {
   // TODO: special case for kind == ScriptToken::Error
@@ -205,9 +207,87 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getCommandOrIdentify() {
     StringRef ops = "!~*/+-<>?^:="; // List of operators
     size_t e = curStringRef.find_first_of(ops);
     if (e != StringRef::npos && e != 0) {
-      curStringRef = curStringRef.substr(e);
       return advanceTokenInfo(ScriptToken::Identify, e);
     }
   }
-  return advanceTokenInfo(ScriptToken::Identify, pos);
+
+  return advanceTokenInfo(getTokenfromKeyword(curStringRef.substr(0, pos)),
+                          pos);
+}
+
+ScriptToken
+LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
+#define KEYWORD(STR)                                                           \
+  do {                                                                         \
+    if (keyword == #STR)                                                       \
+      return ScriptToken::LS_##STR;                                            \
+  } while (false)
+
+  KEYWORD(ENTRY);
+  KEYWORD(INCLUDE);
+  KEYWORD(GROUP);
+  KEYWORD(OUTPUT);
+  KEYWORD(SEARCH_DIR);
+  KEYWORD(STARTUP);
+  KEYWORD(INSERT);
+  KEYWORD(AFTER);
+  KEYWORD(OUTPUT_FORMAT);
+  KEYWORD(TARGET);
+  KEYWORD(OUTPUT_FORMAT);
+  KEYWORD(ASSERT);
+  KEYWORD(EXTERN);
+  KEYWORD(OUTPUT_ARCH);
+  KEYWORD(PROVIDE);
+  KEYWORD(HIDDEN);
+  KEYWORD(PROVIDE_HIDDEN);
+  KEYWORD(SECTIONS);
+  KEYWORD(EXCLUDE_FILE);
+  KEYWORD(KEEP);
+  KEYWORD(INPUT_SECTION_FLAGS);
+  KEYWORD(OVERLAY);
+  KEYWORD(NOLOAD);
+  KEYWORD(COPY);
+  KEYWORD(INFO);
+  KEYWORD(OVERWRITE_SECTIONS);
+  KEYWORD(SUBALIGN);
+  KEYWORD(ONLY_IF_RO);
+  KEYWORD(ONLY_IF_RW);
+  KEYWORD(FILL);
+  KEYWORD(SORT);
+  KEYWORD(ABSOLUTE);
+  KEYWORD(ADDR);
+  KEYWORD(ALIGN);
+  KEYWORD(DATA_SEGMENT_ALIGN);
+  KEYWORD(DATA_SEGMENT_END);
+  KEYWORD(DEFINED);
+  KEYWORD(LOADADDR);
+  KEYWORD(LOG2CEIL);
+  KEYWORD(MAX);
+  KEYWORD(MIN);
+  KEYWORD(ORIGIN);
+  KEYWORD(SEGMENT_START);
+  KEYWORD(SIZEOF);
+  KEYWORD(SIZEOF_HEADERS);
+  KEYWORD(FILEHDR);
+  KEYWORD(PHDRS);
+  KEYWORD(AT);
+  KEYWORD(FLAGS);
+  KEYWORD(VERSION);
+  KEYWORD(REGION_ALIAS);
+  KEYWORD(AS_NEEDED);
+  KEYWORD(CONSTRUCTORS);
+  KEYWORD(MAXPAGESIZE);
+  KEYWORD(COMMONPAGESIZE);
+
+#undef KEYWORD
+
+  if (keyword == "local") {
+    return ScriptToken::LS_Local;
+  } else if (keyword == "global") {
+    return ScriptToken::LS_Global;
+  } else if (keyword == "extern") {
+    return ScriptToken::LS_Extern;
+  } else {
+    return ScriptToken::Identify;
+  }
 }
