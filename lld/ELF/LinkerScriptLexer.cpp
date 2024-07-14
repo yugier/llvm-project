@@ -14,9 +14,13 @@ using namespace llvm;
 using namespace lld;
 using namespace lld::elf;
 
-LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
-                                     llvm::SMDiagnostic &Err)
-    : MB(MB), ErrorInfo(Err), SM(SM) {
+// LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
+//                                      llvm::SMDiagnostic &Err)
+//     : MB(MB), ErrorInfo(Err), SM(SM) {
+//   curStringRef = MB.getBuffer();
+// }
+
+LinkerScriptLexer::LinkerScriptLexer(MemoryBufferRef MB) : MB(MB) {
   curStringRef = MB.getBuffer();
 }
 

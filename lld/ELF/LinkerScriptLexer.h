@@ -24,8 +24,10 @@ class SourceMgr;
 
 class LinkerScriptLexer {
 public:
-  explicit LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
-                             llvm::SMDiagnostic &Err);
+  // explicit LinkerScriptLexer(MemoryBufferRef MB, llvm::SourceMgr &SM,
+  //                            llvm::SMDiagnostic &Err);
+
+  explicit LinkerScriptLexer(MemoryBufferRef MB);
 
   // LLVM SourceMgr and SMDiagnostic cannot be used now since
   // ctx CommonLinkerContext has ownership of all MemoryBuffer
@@ -54,8 +56,8 @@ private:
   };
 
   TokenInfo curToken;
-  llvm::SMDiagnostic &ErrorInfo;
-  llvm::SourceMgr &SM;
+  // llvm::SMDiagnostic &ErrorInfo;
+  // llvm::SourceMgr &SM;
   llvm::MemoryBufferRef MB;
   llvm::StringRef curStringRef;
 
