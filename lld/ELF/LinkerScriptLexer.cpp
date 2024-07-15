@@ -193,7 +193,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getDigits() {
   if (curStringRef.starts_with_insensitive("0x")) {
     return advanceTokenInfo(ScriptToken::Hexdecimal, pos);
   }
-  const char c = curStringRef[pos];
+  const char c = curStringRef[pos - 1];
   switch (c) {
   case 'H':
   case 'h':

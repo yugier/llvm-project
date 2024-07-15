@@ -135,5 +135,19 @@ TEST_F(LinkerScriptLexerTest, CheckINSERTandBEFORE) {
 
   lexAndCheckTokens(ExpectedTokens);
 }
+
+TEST_F(LinkerScriptLexerTest, CheckALIGNandDecimal) {
+  llvm::StringRef testRef = "SECTIONS {.foo : ALIGN(2M) { *(.foo) }}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::Colon, ScriptToken::LS_ALIGN,
+       ScriptToken::BracektBegin, ScriptToken::Decimal_M,
+       ScriptToken::BracektEnd, ScriptToken::CurlyBegin, ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd, ScriptToken::CurlyEnd, ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
 } // namespace elf
 } // namespace lld
