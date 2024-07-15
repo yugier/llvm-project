@@ -103,5 +103,26 @@ TEST_F(LinkerScriptLexerTest, CheckHex) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, CheckPROVIDECommand) {
+  llvm::StringRef testRef = "SECTIONS\n{.text :\n{\n*(.text)\n\t_etext = .;\n \
+                             \t PROVIDE(etext = .);\n}\n}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens({
+      ScriptToken::LS_SECTIONS,  ScriptToken::CurlyBegin,
+      ScriptToken::Dot,          ScriptToken::Identifier,
+      ScriptToken::Colon,        ScriptToken::CurlyBegin,
+      ScriptToken::Asterisk,     ScriptToken::BracektBegin,
+      ScriptToken::Dot,          ScriptToken::Identifier,
+      ScriptToken::BracektEnd,   ScriptToken::Identifier,
+      ScriptToken::Assign,       ScriptToken::Dot,
+      ScriptToken::Semicolon,    ScriptToken::LS_PROVIDE,
+      ScriptToken::BracektBegin, ScriptToken::Identifier,
+      ScriptToken::Assign,       ScriptToken::Dot,
+      ScriptToken::BracektEnd,   ScriptToken::Semicolon,
+      ScriptToken::CurlyEnd,     ScriptToken::CurlyEnd,
+  });
+
+  lexAndCheckTokens(ExpectedTokens);
+}
 } // namespace elf
 } // namespace lld
