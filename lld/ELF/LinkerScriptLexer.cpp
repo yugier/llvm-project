@@ -57,7 +57,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getTokenInfo() {
   if (std::isdigit(c))
     return getDigits();
   if (std::isalpha(c))
-    return getCommandOrIdentify();
+    return getCommandOrIdentifier();
   return getSymbolToken();
 }
 
@@ -110,7 +110,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
   case ',':
     return advanceTokenInfo(ScriptToken::Comma);
   case '_':
-    return getCommandOrIdentify();
+    return getCommandOrIdentifier();
   case '.':
     return advanceTokenInfo(ScriptToken::Dot);
   case ':':
@@ -209,7 +209,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getDigits() {
   };
 }
 
-LinkerScriptLexer::TokenInfo LinkerScriptLexer::getCommandOrIdentify() {
+LinkerScriptLexer::TokenInfo LinkerScriptLexer::getCommandOrIdentifier() {
   // Unquoted token. This is more relaxed than tokens in C-like language,
   // so that you can write "file-name.cpp" as one bare token, for example.
   size_t pos = curStringRef.find_first_not_of(
@@ -221,7 +221,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getCommandOrIdentify() {
     StringRef ops = "!~*/+-<>?^:="; // List of operators
     size_t e = curStringRef.find_first_of(ops);
     if (e != StringRef::npos && e != 0) {
-      return advanceTokenInfo(ScriptToken::Identify, e);
+      return advanceTokenInfo(ScriptToken::Identifier, e);
     }
   }
 
@@ -302,6 +302,6 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   } else if (keyword == "extern") {
     return ScriptToken::LS_Extern;
   } else {
-    return ScriptToken::Identify;
+    return ScriptToken::Identifier;
   }
 }

@@ -115,7 +115,7 @@ enum class ScriptToken {
   Error,
   Eof,
 
-  Identify,
+  Identifier,
   Hexdecimal,   // 0x
   Hexdecimal_H, // end with H/h
   Decimal,

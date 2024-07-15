@@ -67,7 +67,7 @@ private:
   TokenInfo getSymbolToken();
   TokenInfo getQuotedToken();
   TokenInfo getDigits();
-  TokenInfo getCommandOrIdentify();
+  TokenInfo getCommandOrIdentifier();
   ScriptToken getTokenfromKeyword(llvm::StringRef keyword) const;
 };
 } // namespace lld::elf
