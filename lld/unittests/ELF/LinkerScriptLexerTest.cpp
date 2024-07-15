@@ -7,10 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "../ELF/LinkerScriptLexer.h"
-#include "llvm/ADT/SmallVector"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/MemoryBuff.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/MemoryBufferRef.h"
 
 #include "gtest/gtest.h"
 
@@ -23,22 +24,23 @@ protected:
   std::unique_ptr<MemoryBuffer> Buffer;
 
   void setupCallToLinkScriptLexer(llvm::StringRef scriptStr) {
-    Buffer.reset(llvm::MemoryBuffer::getMemBuffer(scriptStr));
-    Lexer.reset(LinkerScriptLexer(Buffer->getMemBufferRef()))
+    Buffer = llvm::MemoryBuffer::getMemBuffer(scriptStr);
+    Lexer = std::make_unique<LinkerScriptLexer>(
+        LinkerScriptLexer(Buffer->getMemBufferRef()));
   }
 
   void lexAndCheckTokens(llvm::SmallVector<ScriptToken> ExpectedTokens) {
     for (const auto &expected : ExpectedTokens) {
       Lexer->advanceLexer();
-      EXPECTED_EQ(Lexer->getTokenKind, expected);
+      EXPECT_EQ(Lexer->getTokenKind(), expected);
     }
   }
 };
 
-TEST(LinkerScriptLexerTest, CheckEntry) {
+TEST_F(LinkerScriptLexerTest, CheckEntry) {
   llvm::StringRef testRef = "      ENTRY";
   setupCallToLinkScriptLexer(testRef);
-  llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::ENTRY});
+  llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_ENTRY});
   lexAndCheckTokens(ExpectedTokens);
 }
 } // namespace elf
