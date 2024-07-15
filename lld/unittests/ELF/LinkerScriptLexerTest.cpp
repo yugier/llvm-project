@@ -66,7 +66,7 @@ TEST_F(LinkerScriptLexerTest, CheckSECTIONSandALIGN) {
 
   setupCallToLinkScriptLexer(testRef);
   llvm::SmallVector<ScriptToken> ExpectedTokens(
-      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin, ScriptToken::Dot,
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
        ScriptToken::Identifier, ScriptToken::Colon, ScriptToken::LS_ALIGN,
        ScriptToken::BracektBegin, ScriptToken::Decimal, ScriptToken::BracektEnd,
        ScriptToken::CurlyBegin, ScriptToken::CurlyEnd, ScriptToken::CurlyEnd});
@@ -79,26 +79,23 @@ TEST_F(LinkerScriptLexerTest, CheckHex) {
                            . = 0x8000000;\n .data : { *(.data) }\n .bss : { *(.bss) }}";
   setupCallToLinkScriptLexer(testRef);
   llvm::SmallVector<ScriptToken> ExpectedTokens(
-      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
-       ScriptToken::Dot,         ScriptToken::Assign,
-       ScriptToken::Hexdecimal,  ScriptToken::Semicolon,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::Colon,       ScriptToken::CurlyBegin,
-       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
-       ScriptToken::Dot,         ScriptToken::Assign,
-       ScriptToken::Hexdecimal,  ScriptToken::Semicolon,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::Colon,       ScriptToken::CurlyBegin,
-       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::Colon,       ScriptToken::CurlyBegin,
-       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
-       ScriptToken::Dot,         ScriptToken::Identifier,
-       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
+      {ScriptToken::LS_SECTIONS,  ScriptToken::CurlyBegin,
+       ScriptToken::Dot,          ScriptToken::Assign,
+       ScriptToken::Hexdecimal,   ScriptToken::Semicolon,
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
+       ScriptToken::Dot,          ScriptToken::Assign,
+       ScriptToken::Hexdecimal,   ScriptToken::Semicolon,
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
        ScriptToken::CurlyEnd});
   lexAndCheckTokens(ExpectedTokens);
 }
@@ -109,10 +106,9 @@ TEST_F(LinkerScriptLexerTest, CheckPROVIDECommand) {
   setupCallToLinkScriptLexer(testRef);
   llvm::SmallVector<ScriptToken> ExpectedTokens({
       ScriptToken::LS_SECTIONS,  ScriptToken::CurlyBegin,
-      ScriptToken::Dot,          ScriptToken::Identifier,
-      ScriptToken::Colon,        ScriptToken::CurlyBegin,
-      ScriptToken::Asterisk,     ScriptToken::BracektBegin,
-      ScriptToken::Dot,          ScriptToken::Identifier,
+      ScriptToken::Identifier,   ScriptToken::Colon,
+      ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+      ScriptToken::BracektBegin, ScriptToken::Identifier,
       ScriptToken::BracektEnd,   ScriptToken::Identifier,
       ScriptToken::Assign,       ScriptToken::Dot,
       ScriptToken::Semicolon,    ScriptToken::LS_PROVIDE,
@@ -121,6 +117,21 @@ TEST_F(LinkerScriptLexerTest, CheckPROVIDECommand) {
       ScriptToken::BracektEnd,   ScriptToken::Semicolon,
       ScriptToken::CurlyEnd,     ScriptToken::CurlyEnd,
   });
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
+TEST_F(LinkerScriptLexerTest, CheckINSERTandBEFORE) {
+  llvm::StringRef testRef =
+      "SECTIONS { .foo.data : { *(.foo.data) } } INSERT BEFORE .data;";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::Colon, ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd, ScriptToken::CurlyEnd,
+       ScriptToken::CurlyEnd, ScriptToken::LS_INSERT, ScriptToken::LS_BEFORE,
+       ScriptToken::Identifier, ScriptToken::Semicolon});
 
   lexAndCheckTokens(ExpectedTokens);
 }

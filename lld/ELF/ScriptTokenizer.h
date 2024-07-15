@@ -48,6 +48,7 @@ enum class ScriptToken {
   LS_PROVIDE_HIDDEN,
 
   LS_SECTIONS,
+  LS_BEFORE,
 
   // Input Section
   LS_EXCLUDE_FILE,

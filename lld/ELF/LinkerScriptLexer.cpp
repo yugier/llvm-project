@@ -112,7 +112,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
   case '_':
     return getCommandOrIdentifier();
   case '.':
-    return advanceTokenInfo(ScriptToken::Dot);
+    return getCommandOrIdentifier();
   case ':':
     return advanceTokenInfo(ScriptToken::Colon);
   case '*':
@@ -225,6 +225,9 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getCommandOrIdentifier() {
     }
   }
 
+  if (pos == 1 && curStringRef[0] == '.')
+    return advanceTokenInfo(ScriptToken::Dot);
+
   return advanceTokenInfo(getTokenfromKeyword(curStringRef.substr(0, pos)),
                           pos);
 }
@@ -255,6 +258,7 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(HIDDEN);
   KEYWORD(PROVIDE_HIDDEN);
   KEYWORD(SECTIONS);
+  KEYWORD(BEFORE);
   KEYWORD(EXCLUDE_FILE);
   KEYWORD(KEEP);
   KEYWORD(INPUT_SECTION_FLAGS);
