@@ -74,5 +74,35 @@ TEST_F(LinkerScriptLexerTest, CheckSECTIONSandALIGN) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, CheckHex) {
+  llvm::StringRef testRef =
+      "SECTIONS{ \n . = 0x10000;\n .text : { *(.text) }\n \
+                           . = 0x8000000;\n .data : { *(.data) }\n .bss : { *(.bss) }}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Dot,         ScriptToken::Assign,
+       ScriptToken::Hexdecimal,  ScriptToken::Semicolon,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::Colon,       ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
+       ScriptToken::Dot,         ScriptToken::Assign,
+       ScriptToken::Hexdecimal,  ScriptToken::Semicolon,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::Colon,       ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::Colon,       ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Dot,         ScriptToken::Identify,
+       ScriptToken::BracektEnd,  ScriptToken::CurlyEnd,
+       ScriptToken::CurlyEnd});
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld

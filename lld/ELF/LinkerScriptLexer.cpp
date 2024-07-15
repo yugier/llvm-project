@@ -115,6 +115,10 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
     return advanceTokenInfo(ScriptToken::Dot);
   case ':':
     return advanceTokenInfo(ScriptToken::Colon);
+  case '*':
+    return advanceTokenInfo(ScriptToken::Asterisk);
+  case '=':
+    return advanceTokenInfo(ScriptToken::Assign);
   case '<':
     if (curStringRef.size() > 2 && curStringRef[1] == '<' &&
         curStringRef[2] == '=') {
