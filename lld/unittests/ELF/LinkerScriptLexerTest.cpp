@@ -12,6 +12,7 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/MemoryBufferRef.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "gtest/gtest.h"
 
@@ -30,9 +31,15 @@ protected:
   }
 
   void lexAndCheckTokens(llvm::SmallVector<ScriptToken> ExpectedTokens) {
+    bool outputinfo = true;
     for (const auto &expected : ExpectedTokens) {
       Lexer->advanceLexer();
       EXPECT_EQ(Lexer->getTokenKind(), expected);
+      if (outputinfo) {
+        llvm::errs() << Lexer->getTokenStringRef() << " "
+                     << static_cast<unsigned>(Lexer->getTokenKind()) << " "
+                     << static_cast<unsigned>(expected) << "\n";
+      }
     }
   }
 };
@@ -43,5 +50,29 @@ TEST_F(LinkerScriptLexerTest, CheckEntry) {
   llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_ENTRY});
   lexAndCheckTokens(ExpectedTokens);
 }
+
+TEST_F(LinkerScriptLexerTest, CheckEntryLabel) {
+  llvm::StringRef testRef = "ENTRY(_label)";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_ENTRY, ScriptToken::BracektBegin,
+       ScriptToken::Underscore, ScriptToken::Identify,
+       ScriptToken::BracektEnd});
+  lexAndCheckTokens(ExpectedTokens);
+}
+
+TEST_F(LinkerScriptLexerTest, CheckSECTIONSandALIGN) {
+  llvm::StringRef testRef = "SECTIONS { \
+  .super_aligned : ALIGN(16) { /* ... */  }}";
+
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin, ScriptToken::Dot,
+       ScriptToken::Identify, ScriptToken::Colon, ScriptToken::LS_ALIGN,
+       ScriptToken::BracektBegin, ScriptToken::Decimal, ScriptToken::BracektEnd,
+       ScriptToken::CurlyBegin, ScriptToken::CurlyEnd, ScriptToken::CurlyEnd});
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld

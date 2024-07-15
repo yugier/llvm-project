@@ -109,6 +109,12 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
     return advanceTokenInfo(ScriptToken::Semicolon);
   case ',':
     return advanceTokenInfo(ScriptToken::Comma);
+  case '_':
+    return advanceTokenInfo(ScriptToken::Underscore);
+  case '.':
+    return advanceTokenInfo(ScriptToken::Dot);
+  case ':':
+    return advanceTokenInfo(ScriptToken::Colon);
   case '<':
     if (curStringRef.size() > 2 && curStringRef[1] == '<' &&
         curStringRef[2] == '=') {

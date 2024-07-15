@@ -142,6 +142,8 @@ enum class ScriptToken {
   Xor,          // ^
   Or,           // |
   PercentSign,  // %
+  Underscore,   // _
+  Dot,          // .
   Quote, // Quoted token. Note that double-quote characters are parts of a token
   // because, in a glob match context, only unquoted tokens are interpreted as
   // glob patterns. Double-quoted tokens are literal patterns in that context.

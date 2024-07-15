@@ -46,7 +46,7 @@ public:
 
   // TODO: rewrite next(), peek(), and peek2() since TokenInfo change
   void advanceLexer();
-  const ScriptToken getTokenKind() const { return curToken.kind; };
+  ScriptToken getTokenKind() const { return curToken.kind; };
   llvm::StringRef getTokenStringRef() const { return curToken.val; };
 
 private:
