@@ -110,7 +110,7 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
   case ',':
     return advanceTokenInfo(ScriptToken::Comma);
   case '_':
-    return advanceTokenInfo(ScriptToken::Underscore);
+    return getCommandOrIdentify();
   case '.':
     return advanceTokenInfo(ScriptToken::Dot);
   case ':':

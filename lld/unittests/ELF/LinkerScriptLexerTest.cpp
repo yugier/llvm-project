@@ -55,8 +55,7 @@ TEST_F(LinkerScriptLexerTest, CheckEntryLabel) {
   llvm::StringRef testRef = "ENTRY(_label)";
   setupCallToLinkScriptLexer(testRef);
   llvm::SmallVector<ScriptToken> ExpectedTokens(
-      {ScriptToken::LS_ENTRY, ScriptToken::BracektBegin,
-       ScriptToken::Underscore, ScriptToken::Identify,
+      {ScriptToken::LS_ENTRY, ScriptToken::BracektBegin, ScriptToken::Identify,
        ScriptToken::BracektEnd});
   lexAndCheckTokens(ExpectedTokens);
 }
