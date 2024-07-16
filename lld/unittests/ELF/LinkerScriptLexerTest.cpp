@@ -309,6 +309,26 @@ TEST_F(LinkerScriptLexerTest, checkAlignEmptyTest) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, checkBSSFillTest) {
+  llvm::StringRef testRef = "SECTIONS {\
+                             .bss : {\
+                               . += 0x10000; \
+                               *(.bss)\
+                             } =0xFF};";
+
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::Colon, ScriptToken::CurlyBegin,
+       ScriptToken::Dot, ScriptToken::PlusAssign, ScriptToken::Hexdecimal,
+       ScriptToken::Semicolon, ScriptToken::Asterisk, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd, ScriptToken::CurlyEnd,
+       ScriptToken::Assign, ScriptToken::Hexdecimal, ScriptToken::CurlyEnd,
+       ScriptToken::Semicolon});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 TEST_F(LinkerScriptLexerTest, checkMemoryTest) {
   llvm::StringRef testRef = "MEMORY { \
   AX (ax)    : ORIGIN = 0x2000, LENGTH = 0x100 \
