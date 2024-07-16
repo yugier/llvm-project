@@ -197,7 +197,9 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getQuotedToken() {
 }
 
 LinkerScriptLexer::TokenInfo LinkerScriptLexer::getDigits() {
-  size_t pos = curStringRef.find_first_not_of("0123456789XxHhKkMm");
+  size_t pos = curStringRef.find_first_not_of(
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+      "0123456789");
   if (curStringRef.starts_with_insensitive("0x")) {
     return advanceTokenInfo(ScriptToken::Hexdecimal, pos);
   }

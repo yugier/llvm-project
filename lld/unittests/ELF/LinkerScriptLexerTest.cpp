@@ -163,58 +163,33 @@ TEST_F(LinkerScriptLexerTest, CheckAbsoluteExprTest) {
   } \
 }";
   setupCallToLinkScriptLexer(testRef);
-  llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_SECTIONS,
-                                                 ScriptToken::CurlyBegin,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Colon,
-                                                 ScriptToken::CurlyBegin,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::LS_ALIGNOF,
-                                                 ScriptToken::BracektBegin,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::BracektEnd,
-                                                 ScriptToken::Semicolon,
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS,    ScriptToken::CurlyBegin,
+       ScriptToken::Identifier,     ScriptToken::Colon,
+       ScriptToken::CurlyBegin,     ScriptToken::Identifier,
+       ScriptToken::Assign,         ScriptToken::LS_ALIGNOF,
+       ScriptToken::BracektBegin,   ScriptToken::Identifier,
+       ScriptToken::BracektEnd,     ScriptToken::Semicolon,
 
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::LS_CONSTANT,
-                                                 ScriptToken::BracektBegin,
-                                                 ScriptToken::LS_MAXPAGESIZE,
-                                                 ScriptToken::BracektEnd,
-                                                 ScriptToken::Semicolon,
+       ScriptToken::Identifier,     ScriptToken::Assign,
+       ScriptToken::LS_CONSTANT,    ScriptToken::BracektBegin,
+       ScriptToken::LS_MAXPAGESIZE, ScriptToken::BracektEnd,
+       ScriptToken::Semicolon,
 
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::LS_SIZEOF,
-                                                 ScriptToken::BracektBegin,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::BracektEnd,
-                                                 ScriptToken::Semicolon,
+       ScriptToken::Identifier,     ScriptToken::Assign,
+       ScriptToken::LS_SIZEOF,      ScriptToken::BracektBegin,
+       ScriptToken::Identifier,     ScriptToken::BracektEnd,
+       ScriptToken::Semicolon,      ScriptToken::Identifier,
+       ScriptToken::Assign,         ScriptToken::LS_SIZEOF_HEADERS,
 
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::LS_SIZEOF_HEADERS,
-                                                 ScriptToken::Semicolon,
-
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::Hexdecimal,
-                                                 ScriptToken::Semicolon,
-
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Assign,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::Plus,
-                                                 ScriptToken::Decimal,
-                                                 ScriptToken::Semicolon,
-
-                                                 ScriptToken::Asterisk,
-                                                 ScriptToken::BracektBegin,
-                                                 ScriptToken::Identifier,
-                                                 ScriptToken::BracektEnd,
-                                                 ScriptToken::CurlyEnd,
-                                                 ScriptToken::CurlyEnd});
+       ScriptToken::Identifier,     ScriptToken::Assign,
+       ScriptToken::Hexdecimal,     ScriptToken::Semicolon,
+       ScriptToken::Identifier,     ScriptToken::Assign,
+       ScriptToken::Identifier,     ScriptToken::Plus,
+       ScriptToken::Decimal,        ScriptToken::Semicolon,
+       ScriptToken::Asterisk,       ScriptToken::BracektBegin,
+       ScriptToken::Identifier,     ScriptToken::BracektEnd,
+       ScriptToken::CurlyEnd,       ScriptToken::CurlyEnd});
 
   lexAndCheckTokens(ExpectedTokens);
 }
@@ -237,5 +212,62 @@ TEST_F(LinkerScriptLexerTest, checkAddrZeroTest) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, checkAddrTest) {
+  llvm::StringRef testRef = "SECTIONS {\
+  . = 0x1000; \
+  .text  : { \
+    *(.text*) \
+    x1 = ADDR(.text) + 1; x2 = 1 + ADDR(.text);\
+    x3 = ADDR(.text) & 0xffff;\
+  }\
+  .foo-1 : { *(.foo-1) }\
+  .foo-2 ADDR(.foo-1) + 0x100 : { *(.foo-2) }\
+  .foo-3 : { *(.foo-3) }\
+}";
+
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS,  ScriptToken::CurlyBegin,
+       ScriptToken::Dot,          ScriptToken::Assign,
+       ScriptToken::Hexdecimal,   ScriptToken::Semicolon,
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::Identifier,
+       ScriptToken::Assign,       ScriptToken::LS_ADDR,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::Plus,
+       ScriptToken::Decimal,      ScriptToken::Semicolon,
+
+       ScriptToken::Identifier,   ScriptToken::Assign,
+       ScriptToken::Decimal,      ScriptToken::Plus,
+       ScriptToken::LS_ADDR,      ScriptToken::BracektBegin,
+       ScriptToken::Identifier,   ScriptToken::BracektEnd,
+       ScriptToken::Semicolon,    ScriptToken::Identifier,
+       ScriptToken::Assign,       ScriptToken::LS_ADDR,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::Bitwise,
+       ScriptToken::Hexdecimal,   ScriptToken::Semicolon,
+       ScriptToken::CurlyEnd,
+
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
+       ScriptToken::Identifier,   ScriptToken::LS_ADDR,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::Plus,
+       ScriptToken::Hexdecimal,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
+       ScriptToken::Identifier,   ScriptToken::Colon,
+       ScriptToken::CurlyBegin,   ScriptToken::Asterisk,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
+       ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
 } // namespace elf
 } // namespace lld
