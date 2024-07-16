@@ -308,5 +308,48 @@ TEST_F(LinkerScriptLexerTest, checkAlignEmptyTest) {
 
   lexAndCheckTokens(ExpectedTokens);
 }
+
+TEST_F(LinkerScriptLexerTest, checkMemoryTest) {
+  llvm::StringRef testRef = "MEMORY { \
+  AX (ax)    : ORIGIN = 0x2000, LENGTH = 0x100 \
+  AW (aw)    : ORIGIN = 0x3000, LENGTH = 0x100 \
+  FLASH (ax) : ORIGIN = 0x6000, LENGTH = 0x100 \
+  RAM (aw)   : ORIGIN = 0x7000, LENGTH = 0x100}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_MEMORY,  ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd,
+       ScriptToken::Colon,      ScriptToken::LS_ORIGIN,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+       ScriptToken::Comma,      ScriptToken::LS_LENGTH,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+
+       ScriptToken::Identifier, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd,
+       ScriptToken::Colon,      ScriptToken::LS_ORIGIN,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+       ScriptToken::Comma,      ScriptToken::LS_LENGTH,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+
+       ScriptToken::Identifier, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd,
+       ScriptToken::Colon,      ScriptToken::LS_ORIGIN,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+       ScriptToken::Comma,      ScriptToken::LS_LENGTH,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+
+       ScriptToken::Identifier, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd,
+       ScriptToken::Colon,      ScriptToken::LS_ORIGIN,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+       ScriptToken::Comma,      ScriptToken::LS_LENGTH,
+       ScriptToken::Assign,     ScriptToken::Hexdecimal,
+
+       ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld

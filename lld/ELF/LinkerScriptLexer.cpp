@@ -253,6 +253,7 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(ENTRY);
   KEYWORD(INCLUDE);
   KEYWORD(GROUP);
+  KEYWORD(MEMORY);
   KEYWORD(OUTPUT);
   KEYWORD(SEARCH_DIR);
   KEYWORD(STARTUP);
@@ -290,6 +291,7 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(DATA_SEGMENT_ALIGN);
   KEYWORD(DATA_SEGMENT_END);
   KEYWORD(DEFINED);
+  KEYWORD(LENGTH);
   KEYWORD(LOADADDR);
   KEYWORD(LOG2CEIL);
   KEYWORD(MAX);

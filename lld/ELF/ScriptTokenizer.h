@@ -23,6 +23,7 @@ enum class ScriptToken {
   LS_INCLUDE,
   LS_INPUT,
   LS_GROUP,
+  LS_MEMORY,
   LS_OUTPUT,
   LS_SEARCH_DIR,
   LS_STARTUP,
@@ -79,6 +80,7 @@ enum class ScriptToken {
   LS_DATA_SEGMENT_ALIGN,
   LS_DATA_SEGMENT_END,
   LS_DEFINED,
+  LS_LENGTH,
   LS_LOADADDR,
 
   LS_LOG2CEIL,
