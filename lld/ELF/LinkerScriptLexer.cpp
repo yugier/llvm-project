@@ -119,6 +119,14 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
     return advanceTokenInfo(ScriptToken::Asterisk);
   case '=':
     return advanceTokenInfo(ScriptToken::Assign);
+  case '+':
+    if (curStringRef.size() > 1 && curStringRef[1] == '=')
+      return advanceTokenInfo(ScriptToken::PlusAssign, 2);
+    return advanceTokenInfo(ScriptToken::Plus);
+  case '-':
+    if (curStringRef.size() > 1 && curStringRef[1] == '=')
+      return advanceTokenInfo(ScriptToken::MinusAssign, 2);
+    return advanceTokenInfo(ScriptToken::Minus);
   case '<':
     if (curStringRef.size() > 2 && curStringRef[1] == '<' &&
         curStringRef[2] == '=') {
@@ -252,6 +260,7 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(TARGET);
   KEYWORD(OUTPUT_FORMAT);
   KEYWORD(ASSERT);
+  KEYWORD(CONSTANT);
   KEYWORD(EXTERN);
   KEYWORD(OUTPUT_ARCH);
   KEYWORD(PROVIDE);
@@ -275,6 +284,7 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(ABSOLUTE);
   KEYWORD(ADDR);
   KEYWORD(ALIGN);
+  KEYWORD(ALIGNOF);
   KEYWORD(DATA_SEGMENT_ALIGN);
   KEYWORD(DATA_SEGMENT_END);
   KEYWORD(DEFINED);

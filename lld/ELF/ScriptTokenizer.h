@@ -36,6 +36,7 @@ enum class ScriptToken {
 
   // Other linker script commands
   LS_ASSERT,
+  LS_CONSTANT,
   LS_EXTERN,
   // FORCE_COMMON_ALLOCATION
   // INHIBIT_COMMON_ALLOCATION
@@ -73,6 +74,7 @@ enum class ScriptToken {
   LS_ABSOLUTE,
   LS_ADDR,
   LS_ALIGN,
+  LS_ALIGNOF,
   // BLOCK, // synonym for ALIGN for compatibility with older linker script
   LS_DATA_SEGMENT_ALIGN,
   LS_DATA_SEGMENT_END,
@@ -152,7 +154,7 @@ enum class ScriptToken {
   // Assignmemnt
   Assign,           // =
   PlusAssign,       // +=
-  MinussAssign,     // -=
+  MinusAssign,      // -=
   MulAssign,        // *=
   DivAssign,        // /=
   LeftShiftAssign,  // <<=

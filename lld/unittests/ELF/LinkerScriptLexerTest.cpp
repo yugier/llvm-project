@@ -149,5 +149,75 @@ TEST_F(LinkerScriptLexerTest, CheckALIGNandDecimal) {
 
   lexAndCheckTokens(ExpectedTokens);
 }
+
+TEST_F(LinkerScriptLexerTest, CheckAbsoluteExprTest) {
+  llvm::StringRef testRef = "SECTIONS { \
+  .text : { \
+    bar1 = ALIGNOF(.text); \
+    bar2 = CONSTANT (MAXPAGESIZE); \
+    bar3 = SIZEOF (.text); \
+    bar4 = SIZEOF_HEADERS; \
+    bar5 = 0x42; \
+    bar6 = foo + 1; \
+    *(.text) \
+  } \
+}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_SECTIONS,
+                                                 ScriptToken::CurlyBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Colon,
+                                                 ScriptToken::CurlyBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_ALIGNOF,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_CONSTANT,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::LS_MAXPAGESIZE,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_SIZEOF,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_SIZEOF_HEADERS,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::Hexdecimal,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Plus,
+                                                 ScriptToken::Decimal,
+                                                 ScriptToken::Semicolon,
+
+                                                 ScriptToken::Asterisk,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::CurlyEnd,
+                                                 ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld
