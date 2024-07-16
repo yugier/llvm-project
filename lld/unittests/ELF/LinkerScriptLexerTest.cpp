@@ -181,6 +181,7 @@ TEST_F(LinkerScriptLexerTest, CheckAbsoluteExprTest) {
        ScriptToken::Identifier,     ScriptToken::BracektEnd,
        ScriptToken::Semicolon,      ScriptToken::Identifier,
        ScriptToken::Assign,         ScriptToken::LS_SIZEOF_HEADERS,
+       ScriptToken::Semicolon,
 
        ScriptToken::Identifier,     ScriptToken::Assign,
        ScriptToken::Hexdecimal,     ScriptToken::Semicolon,
@@ -266,6 +267,44 @@ TEST_F(LinkerScriptLexerTest, checkAddrTest) {
        ScriptToken::BracektBegin, ScriptToken::Identifier,
        ScriptToken::BracektEnd,   ScriptToken::CurlyEnd,
        ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
+TEST_F(LinkerScriptLexerTest, checkAlignEmptyTest) {
+  llvm::StringRef testRef = "SECTIONS { \
+  . = SIZEOF_HEADERS; \
+  abc : {} \
+  . = ALIGN(0x1000); \
+  foo : { *(foo) } \
+}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_SECTIONS,
+                                                 ScriptToken::CurlyBegin,
+                                                 ScriptToken::Dot,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_SIZEOF_HEADERS,
+                                                 ScriptToken::Semicolon,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Colon,
+                                                 ScriptToken::CurlyBegin,
+                                                 ScriptToken::CurlyEnd,
+                                                 ScriptToken::Dot,
+                                                 ScriptToken::Assign,
+                                                 ScriptToken::LS_ALIGN,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::Hexdecimal,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::Semicolon,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::Colon,
+                                                 ScriptToken::CurlyBegin,
+                                                 ScriptToken::Asterisk,
+                                                 ScriptToken::BracektBegin,
+                                                 ScriptToken::Identifier,
+                                                 ScriptToken::BracektEnd,
+                                                 ScriptToken::CurlyEnd,
+                                                 ScriptToken::CurlyEnd});
 
   lexAndCheckTokens(ExpectedTokens);
 }
