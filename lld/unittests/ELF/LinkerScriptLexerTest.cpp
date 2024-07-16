@@ -219,5 +219,23 @@ TEST_F(LinkerScriptLexerTest, CheckAbsoluteExprTest) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, checkAddrZeroTest) {
+  llvm::StringRef testRef = "SECTIONS {\
+  foo = ADDR(.text) - ABSOLUTE(ADDR(.text));\
+};";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::Assign, ScriptToken::LS_ADDR,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd, ScriptToken::Minus, ScriptToken::LS_ABSOLUTE,
+       ScriptToken::BracektBegin, ScriptToken::LS_ADDR,
+       ScriptToken::BracektBegin, ScriptToken::Identifier,
+       ScriptToken::BracektEnd, ScriptToken::BracektEnd, ScriptToken::Semicolon,
+       ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld
