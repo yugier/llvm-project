@@ -480,5 +480,27 @@ TEST_F(LinkerScriptLexerTest, checkDataCommands) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, checkDefinedTest) {
+  llvm::StringRef testRef = "EXTERN(extern_defined) \nSECTIONS { . = \
+                             DEFINED(defined) ? 0x11000 : .;.foo : { *(.foo*) }";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_EXTERN,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,   ScriptToken::BracektEnd,
+       ScriptToken::LS_SECTIONS,  ScriptToken::CurlyBegin,
+       ScriptToken::Dot,          ScriptToken::Assign,
+       ScriptToken::LS_DEFINED,   ScriptToken::BracektBegin,
+       ScriptToken::Identifier,   ScriptToken::BracektEnd,
+       ScriptToken::QuestionMark, ScriptToken::Hexdecimal,
+       ScriptToken::Colon,        ScriptToken::Dot,
+       ScriptToken::Semicolon,    ScriptToken::Identifier,
+       ScriptToken::Colon,        ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk,     ScriptToken::BracektBegin,
+       ScriptToken::Identifier,   ScriptToken::BracektEnd,
+       ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld

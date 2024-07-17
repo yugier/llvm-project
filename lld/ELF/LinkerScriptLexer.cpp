@@ -119,6 +119,8 @@ LinkerScriptLexer::TokenInfo LinkerScriptLexer::getSymbolToken() {
     return advanceTokenInfo(ScriptToken::Asterisk);
   case '=':
     return advanceTokenInfo(ScriptToken::Assign);
+  case '?':
+    return advanceTokenInfo(ScriptToken::QuestionMark);
   case '+':
     if (curStringRef.size() > 1 && curStringRef[1] == '=')
       return advanceTokenInfo(ScriptToken::PlusAssign, 2);
