@@ -273,11 +273,10 @@ TEST_F(LinkerScriptLexerTest, checkAddrTest) {
 
 TEST_F(LinkerScriptLexerTest, checkAlignEmptyTest) {
   llvm::StringRef testRef = "SECTIONS { \
-  . = SIZEOF_HEADERS; \
-  abc : {} \
-  . = ALIGN(0x1000); \
-  foo : { *(foo) } \
-}";
+                             . = SIZEOF_HEADERS; \
+                             abc : {} \
+                             . = ALIGN(0x1000); \
+                             foo : { *(foo) }}";
   setupCallToLinkScriptLexer(testRef);
   llvm::SmallVector<ScriptToken> ExpectedTokens({ScriptToken::LS_SECTIONS,
                                                  ScriptToken::CurlyBegin,
@@ -366,6 +365,20 @@ TEST_F(LinkerScriptLexerTest, checkMemoryTest) {
        ScriptToken::Comma,      ScriptToken::LS_LENGTH,
        ScriptToken::Assign,     ScriptToken::Hexdecimal,
 
+       ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
+TEST_F(LinkerScriptLexerTest, checkCONSTRUCTORS) {
+  llvm::StringRef testRef = "SECTIONS {foo : {*(.foo) CONSTRUCTORS}}";
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier, ScriptToken::Colon, ScriptToken::CurlyBegin,
+       ScriptToken::Asterisk, ScriptToken::BracektBegin,
+       ScriptToken::Identifier, ScriptToken::BracektEnd,
+       ScriptToken::LS_CONSTRUCTORS, ScriptToken::CurlyEnd,
        ScriptToken::CurlyEnd});
 
   lexAndCheckTokens(ExpectedTokens);
