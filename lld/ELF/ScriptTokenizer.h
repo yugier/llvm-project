@@ -111,6 +111,11 @@ enum class ScriptToken {
   LS_MAXPAGESIZE,
   LS_COMMONPAGESIZE,
 
+  LS_BYTE,
+  LS_SHORT,
+  LS_LONG,
+  LS_QUAD,
+
   LS_Local,  // local
   LS_Global, // global
   LS_Extern, // extern

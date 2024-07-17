@@ -384,5 +384,101 @@ TEST_F(LinkerScriptLexerTest, checkCONSTRUCTORS) {
   lexAndCheckTokens(ExpectedTokens);
 }
 
+TEST_F(LinkerScriptLexerTest, checkDataCommands) {
+  // this test case comes from lld/test/ELF/linkerscript/data-commands2.test
+  llvm::StringRef testRef = "MEMORY {\
+                              rom (rwx) : ORIGIN = 0x00, LENGTH = 2K\
+                             } \
+                             SECTIONS {\
+                               .foo : {\
+                                *(.foo.1) \
+                                BYTE(0x11)\
+                                *(.foo.2)\
+                                SHORT(0x1122)\
+                                *(.foo.3)\
+                                LONG(0x11223344)\
+                                *(.foo.4)\
+                                QUAD(0x1122334455667788)\
+                               } > rom \
+                              .bar : { \
+                                *(.bar.1) \
+                                BYTE(a + 1) \
+                                *(.bar.2) \
+                                SHORT(b) \
+                                *(.bar.3) \
+                                LONG(c + 2) \
+                                *(.bar.4) \
+                                QUAD(d) \
+                              } > rom}";
+
+  setupCallToLinkScriptLexer(testRef);
+  llvm::SmallVector<ScriptToken> ExpectedTokens(
+      {ScriptToken::LS_MEMORY,   ScriptToken::CurlyBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::Colon,       ScriptToken::LS_ORIGIN,
+       ScriptToken::Assign,      ScriptToken::Hexdecimal,
+       ScriptToken::Comma,       ScriptToken::LS_LENGTH,
+       ScriptToken::Assign,      ScriptToken::Decimal_K,
+       ScriptToken::CurlyEnd,
+
+       ScriptToken::LS_SECTIONS, ScriptToken::CurlyBegin,
+       ScriptToken::Identifier,  ScriptToken::Colon,
+       ScriptToken::CurlyBegin,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_BYTE,     ScriptToken::BracektBegin,
+       ScriptToken::Hexdecimal,  ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_SHORT,    ScriptToken::BracektBegin,
+       ScriptToken::Hexdecimal,  ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_LONG,     ScriptToken::BracektBegin,
+       ScriptToken::Hexdecimal,  ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_QUAD,     ScriptToken::BracektBegin,
+       ScriptToken::Hexdecimal,  ScriptToken::BracektEnd,
+
+       ScriptToken::CurlyEnd,    ScriptToken::Greater,
+       ScriptToken::Identifier,
+
+       ScriptToken::Identifier,  ScriptToken::Colon,
+       ScriptToken::CurlyBegin,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_BYTE,     ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::Plus,
+       ScriptToken::Decimal,     ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_SHORT,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_LONG,     ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::Plus,
+       ScriptToken::Decimal,     ScriptToken::BracektEnd,
+
+       ScriptToken::Asterisk,    ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+       ScriptToken::LS_QUAD,     ScriptToken::BracektBegin,
+       ScriptToken::Identifier,  ScriptToken::BracektEnd,
+
+       ScriptToken::CurlyEnd,    ScriptToken::Greater,
+       ScriptToken::Identifier,  ScriptToken::CurlyEnd});
+
+  lexAndCheckTokens(ExpectedTokens);
+}
+
 } // namespace elf
 } // namespace lld

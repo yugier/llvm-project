@@ -310,6 +310,10 @@ LinkerScriptLexer::getTokenfromKeyword(llvm::StringRef keyword) const {
   KEYWORD(CONSTRUCTORS);
   KEYWORD(MAXPAGESIZE);
   KEYWORD(COMMONPAGESIZE);
+  KEYWORD(BYTE);
+  KEYWORD(SHORT);
+  KEYWORD(LONG);
+  KEYWORD(QUAD);
 
 #undef KEYWORD
 
