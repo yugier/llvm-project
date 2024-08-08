@@ -38,24 +38,37 @@ struct OutputDesc;
 struct SectionClass;
 struct SectionClassDesc;
 
+class ExprValueBase {
+public:
+  ExprValueBase(uint64_t val) : val(val) {}
+
+  uint64_t val;
+  uint64_t alignment = 1;
+  virtual uint64_t getValue() const {
+    return llvm::alignToPowerOf2(val, alignment);
+  };
+};
+
 // This represents an r-value in the linker script.
-struct ExprValue {
+class ExprValue : public ExprValueBase {
+public:
   ExprValue(SectionBase *sec, bool forceAbsolute, uint64_t val,
             const Twine &loc)
-      : sec(sec), val(val), forceAbsolute(forceAbsolute), loc(loc.str()) {}
+      : ExprValueBase(val), sec(sec), forceAbsolute(forceAbsolute),
+        loc(loc.str()) {}
 
   ExprValue(uint64_t val) : ExprValue(nullptr, false, val, "") {}
 
   bool isAbsolute() const { return forceAbsolute || sec == nullptr; }
-  uint64_t getValue() const;
+  uint64_t getValue() const override;
   uint64_t getSecAddr() const;
   uint64_t getSectionOffset() const;
 
   // If a value is relative to a section, it has a non-null Sec.
-  SectionBase *sec;
+  SectionBase *sec = nullptr;
 
-  uint64_t val;
-  uint64_t alignment = 1;
+  // uint64_t val;
+  // uint64_t alignment = 1;
 
   // The original st_type if the expression represents a symbol. Any operation
   // resets type to STT_NOTYPE.
