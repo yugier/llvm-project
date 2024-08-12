@@ -26,7 +26,7 @@
 #include <memory>
 
 namespace lld::elf {
-
+class Expr;
 class Defined;
 class InputFile;
 class InputSection;
@@ -38,37 +38,25 @@ struct OutputDesc;
 struct SectionClass;
 struct SectionClassDesc;
 
-class ExprValueBase {
-public:
-  ExprValueBase(uint64_t val) : val(val) {}
-
-  uint64_t val;
-  uint64_t alignment = 1;
-  virtual uint64_t getValue() const {
-    return llvm::alignToPowerOf2(val, alignment);
-  };
-};
-
 // This represents an r-value in the linker script.
-class ExprValue : public ExprValueBase {
+class ExprValue {
 public:
   ExprValue(SectionBase *sec, bool forceAbsolute, uint64_t val,
             const Twine &loc)
-      : ExprValueBase(val), sec(sec), forceAbsolute(forceAbsolute),
-        loc(loc.str()) {}
+      : sec(sec), forceAbsolute(forceAbsolute), loc(loc.str()) {}
 
   ExprValue(uint64_t val) : ExprValue(nullptr, false, val, "") {}
 
   bool isAbsolute() const { return forceAbsolute || sec == nullptr; }
-  uint64_t getValue() const override;
+  uint64_t getValue() const;
   uint64_t getSecAddr() const;
   uint64_t getSectionOffset() const;
 
   // If a value is relative to a section, it has a non-null Sec.
   SectionBase *sec = nullptr;
 
-  // uint64_t val;
-  // uint64_t alignment = 1;
+  uint64_t val;
+  uint64_t alignment = 1;
 
   // The original st_type if the expression represents a symbol. Any operation
   // resets type to STT_NOTYPE.
@@ -85,7 +73,43 @@ public:
 // This represents an expression in the linker script.
 // ScriptParser::readExpr reads an expression and returns an Expr.
 // Later, we evaluate the expression by calling the function.
-using Expr = std::function<ExprValue()>;
+
+class Expr {
+public:
+  enum class Kind { Constant, Dynamic };
+  virtual ~Expr() = default;
+  virtual ExprValue getExprValue() const { return ExprValue(0); }
+  uint64_t getValue() const { return getExprValue().getValue(); }
+
+  Kind getKind() const { return kind_; }
+
+protected:
+  Expr(Kind kind) : kind_(kind) {}
+
+private:
+  Kind kind_;
+};
+
+class ConstExpr : public Expr {
+public:
+  ConstExpr(ExprValue val) : Expr(Kind::Constant), val_(val) {}
+  ExprValue getExprValue() const override { return val_; }
+
+private:
+  ExprValue val_;
+};
+
+class DynamicExpr : public Expr {
+public:
+  DynamicExpr(std::function<ExprValue()> impl)
+      : Expr(Kind::Dynamic), impl_(impl) {}
+
+  ExprValue getExprValue() const override { return impl_(); }
+
+private:
+  std::function<ExprValue()> impl_;
+};
+// using Expr = std::function<ExprValue()>;
 
 // This enum is used to implement linker script SECTIONS command.
 // https://sourceware.org/binutils/docs/ld/SECTIONS.html#SECTIONS
@@ -174,8 +198,8 @@ struct MemoryRegion {
   uint32_t negInvFlags;
   uint64_t curPos = 0;
 
-  uint64_t getOrigin() const { return origin().getValue(); }
-  uint64_t getLength() const { return length().getValue(); }
+  uint64_t getOrigin() const { return origin.getValue(); }
+  uint64_t getLength() const { return length.getValue(); }
 
   bool compatibleWith(uint32_t secFlags) const {
     if ((secFlags & negFlags) || (~secFlags & negInvFlags))
