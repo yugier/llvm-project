@@ -20,6 +20,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/ErrorHandling.h"
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -76,14 +77,14 @@ public:
 
 class Expr {
 public:
-  enum class Kind { Constant, Dynamic };
-  virtual ~Expr() = default;
-  virtual ExprValue getExprValue() const { return ExprValue(0); }
-  uint64_t getValue() const { return getExprValue().getValue(); }
+  enum class Kind { None, Constant, Dynamic };
+  // Default construcotr initializes to a "null" state
+  Expr() : kind_(Kind::None) {}
 
   Kind getKind() const { return kind_; }
-
-protected:
+  ExprValue operator()() const;
+  bool operator&&(bool other) const;
+  bool isValid() const { return kind_ != Kind::None; }
   Expr(Kind kind) : kind_(kind) {}
 
 private:
@@ -93,7 +94,7 @@ private:
 class ConstExpr : public Expr {
 public:
   ConstExpr(ExprValue val) : Expr(Kind::Constant), val_(val) {}
-  ExprValue getExprValue() const override { return val_; }
+  ExprValue getExprValue() const { return val_; }
 
 private:
   ExprValue val_;
@@ -101,12 +102,14 @@ private:
 
 class DynamicExpr : public Expr {
 public:
+  static DynamicExpr create(std::function<ExprValue()> impl) {
+    return DynamicExpr(impl);
+  }
+  ExprValue getExprValue() const { return impl_(); }
+  // uint64_t getValue() const { return impl_().getValue(); }
+private:
   DynamicExpr(std::function<ExprValue()> impl)
       : Expr(Kind::Dynamic), impl_(impl) {}
-
-  ExprValue getExprValue() const override { return impl_(); }
-
-private:
   std::function<ExprValue()> impl_;
 };
 // using Expr = std::function<ExprValue()>;
@@ -198,8 +201,8 @@ struct MemoryRegion {
   uint32_t negInvFlags;
   uint64_t curPos = 0;
 
-  uint64_t getOrigin() const { return origin.getValue(); }
-  uint64_t getLength() const { return length.getValue(); }
+  uint64_t getOrigin() const { return origin().getValue(); }
+  uint64_t getLength() const { return length().getValue(); }
 
   bool compatibleWith(uint32_t secFlags) const {
     if ((secFlags & negFlags) || (~secFlags & negInvFlags))
@@ -319,7 +322,8 @@ struct PhdrsCommand {
   bool hasFilehdr = false;
   bool hasPhdrs = false;
   std::optional<unsigned> flags;
-  Expr lmaExpr = nullptr;
+  // Expr lmaExpr = nullptr;
+  Expr lmaExpr = ConstExpr(ExprValue(0));
 };
 
 class LinkerScript final {

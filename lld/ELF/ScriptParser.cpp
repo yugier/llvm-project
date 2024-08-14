@@ -562,15 +562,16 @@ void ScriptParser::readSearchDir() {
 SmallVector<SectionCommand *, 0> ScriptParser::readOverlay() {
   Expr addrExpr;
   if (consume(":")) {
-    addrExpr = [] { return script->getDot(); };
+    addrExpr = DynamicExpr::create([] { return script->getDot(); });
   } else {
     addrExpr = readExpr();
     expect(":");
   }
   // When AT is omitted, LMA should equal VMA. script->getDot() when evaluating
   // lmaExpr will ensure this, even if the start address is specified.
-  Expr lmaExpr =
-      consume("AT") ? readParenExpr() : [] { return script->getDot(); };
+  Expr lmaExpr = consume("AT")
+                     ? readParenExpr()
+                     : DynamicExpr::create([] { return script->getDot(); });
   expect("{");
 
   SmallVector<SectionCommand *, 0> v;
@@ -581,13 +582,15 @@ SmallVector<SectionCommand *, 0> ScriptParser::readOverlay() {
     OutputDesc *osd = readOverlaySectionDescription();
     osd->osec.addrExpr = addrExpr;
     if (prev) {
-      osd->osec.lmaExpr = [=] { return prev->getLMA() + prev->size; };
+      osd->osec.lmaExpr =
+          DynamicExpr::create([=] { return prev->getLMA() + prev->size; });
     } else {
       osd->osec.lmaExpr = lmaExpr;
       // Use first section address for subsequent sections as initial addrExpr
       // can be DOT. Ensure the first section, even if empty, is not discarded.
       osd->osec.usedInExpression = true;
-      addrExpr = [=]() -> ExprValue { return {&osd->osec, false, 0, ""}; };
+      addrExpr = DynamicExpr::create(
+          [=]() -> ExprValue { return {&osd->osec, false, 0, ""}; });
     }
     v.push_back(osd);
     prev = &osd->osec;
@@ -597,12 +600,12 @@ SmallVector<SectionCommand *, 0> ScriptParser::readOverlay() {
   // counter should be equal to the overlay base address plus size of the
   // largest section seen in the overlay.
   // Here we want to create the Dot assignment command to achieve that.
-  Expr moveDot = [=] {
+  Expr moveDot = DynamicExpr::create([=] {
     uint64_t max = 0;
     for (SectionCommand *cmd : v)
       max = std::max(max, cast<OutputDesc>(cmd)->osec.size);
     return addrExpr().getValue() + max;
-  };
+  });
   v.push_back(make<SymbolAssignment>(".", moveDot, 0, getCurrentLocation()));
   return v;
 }
@@ -891,11 +894,11 @@ Expr ScriptParser::readAssert() {
   StringRef msg = readName();
   expect(")");
 
-  return [=] {
+  return DynamicExpr::create([=] {
     if (!e().getValue())
       errorOrWarn(msg);
     return script->getDot();
-  };
+  });
 }
 
 #define ECase(X)                                                               \
@@ -972,14 +975,14 @@ void ScriptParser::readSectionAddressType(OutputSection *cmd) {
 }
 
 static Expr checkAlignment(Expr e, std::string &loc) {
-  return [=] {
+  return DynamicExpr::create([=] {
     uint64_t alignment = std::max((uint64_t)1, e().getValue());
     if (!isPowerOf2_64(alignment)) {
       error(loc + ": alignment must be power of 2");
       return (uint64_t)1; // Return a dummy value.
     }
     return alignment;
-  };
+  });
 }
 
 OutputDesc *ScriptParser::readOverlaySectionDescription() {
@@ -1196,7 +1199,7 @@ SymbolAssignment *ScriptParser::readSymbolAssignment(StringRef name) {
   Expr e = readExpr();
   if (op != "=") {
     std::string loc = getCurrentLocation();
-    e = [=, c = op[0]]() -> ExprValue {
+    e = DynamicExpr::create([=, c = op[0]]() -> ExprValue {
       ExprValue lhs = script->getSymbolValue(name, loc);
       switch (c) {
       case '*':
@@ -1223,7 +1226,7 @@ SymbolAssignment *ScriptParser::readSymbolAssignment(StringRef name) {
       default:
         llvm_unreachable("");
       }
-    };
+    });
   }
   return make<SymbolAssignment>(name, e, ctx.scriptSymOrderCounter++,
                                 getCurrentLocation());
@@ -1241,55 +1244,63 @@ Expr ScriptParser::readExpr() {
 
 Expr ScriptParser::combine(StringRef op, Expr l, Expr r) {
   if (op == "+")
-    return [=] { return add(l(), r()); };
+    return DynamicExpr::create([=] { return add(l(), r()); });
   if (op == "-")
-    return [=] { return sub(l(), r()); };
+    return DynamicExpr::create([=] { return sub(l(), r()); });
   if (op == "*")
-    return [=] { return l().getValue() * r().getValue(); };
+    return DynamicExpr::create([=] { return l().getValue() * r().getValue(); });
   if (op == "/") {
     std::string loc = getCurrentLocation();
-    return [=]() -> uint64_t {
+    return DynamicExpr::create([=]() -> uint64_t {
       if (uint64_t rv = r().getValue())
         return l().getValue() / rv;
       error(loc + ": division by zero");
       return 0;
-    };
+    });
   }
   if (op == "%") {
     std::string loc = getCurrentLocation();
-    return [=]() -> uint64_t {
+    return DynamicExpr::create([=]() -> uint64_t {
       if (uint64_t rv = r().getValue())
         return l().getValue() % rv;
       error(loc + ": modulo by zero");
       return 0;
-    };
+    });
   }
   if (op == "<<")
-    return [=] { return l().getValue() << r().getValue() % 64; };
+    return DynamicExpr::create(
+        [=] { return l().getValue() << r().getValue() % 64; });
   if (op == ">>")
-    return [=] { return l().getValue() >> r().getValue() % 64; };
+    return DynamicExpr::create(
+        [=] { return l().getValue() >> r().getValue() % 64; });
   if (op == "<")
-    return [=] { return l().getValue() < r().getValue(); };
+    return DynamicExpr::create([=] { return l().getValue() < r().getValue(); });
   if (op == ">")
-    return [=] { return l().getValue() > r().getValue(); };
+    return DynamicExpr::create([=] { return l().getValue() > r().getValue(); });
   if (op == ">=")
-    return [=] { return l().getValue() >= r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() >= r().getValue(); });
   if (op == "<=")
-    return [=] { return l().getValue() <= r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() <= r().getValue(); });
   if (op == "==")
-    return [=] { return l().getValue() == r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() == r().getValue(); });
   if (op == "!=")
-    return [=] { return l().getValue() != r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() != r().getValue(); });
   if (op == "||")
-    return [=] { return l().getValue() || r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() || r().getValue(); });
   if (op == "&&")
-    return [=] { return l().getValue() && r().getValue(); };
+    return DynamicExpr::create(
+        [=] { return l().getValue() && r().getValue(); });
   if (op == "&")
-    return [=] { return bitAnd(l(), r()); };
+    return DynamicExpr::create([=] { return bitAnd(l(), r()); });
   if (op == "^")
-    return [=] { return bitXor(l(), r()); };
+    return DynamicExpr::create([=] { return bitXor(l(), r()); });
   if (op == "|")
-    return [=] { return bitOr(l(), r()); };
+    return DynamicExpr::create([=] { return bitOr(l(), r()); });
   llvm_unreachable("invalid operator");
 }
 
@@ -1324,12 +1335,12 @@ Expr ScriptParser::readExpr1(Expr lhs, int minPrec) {
 
 Expr ScriptParser::getPageSize() {
   std::string location = getCurrentLocation();
-  return [=]() -> uint64_t {
+  return DynamicExpr::create([=]() -> uint64_t {
     if (target)
       return config->commonPageSize;
     error(location + ": unable to calculate page size");
     return 4096; // Return a dummy value.
-  };
+  });
 }
 
 Expr ScriptParser::readConstant() {
@@ -1337,9 +1348,9 @@ Expr ScriptParser::readConstant() {
   if (s == "COMMONPAGESIZE")
     return getPageSize();
   if (s == "MAXPAGESIZE")
-    return [] { return config->maxPageSize; };
+    return DynamicExpr::create([] { return config->maxPageSize; });
   setError("unknown constant: " + s);
-  return [] { return 0; };
+  return DynamicExpr::create([] { return 0; });
 }
 
 // Parses Tok as an integer. It recognizes hexadecimal (prefixed with
@@ -1477,15 +1488,15 @@ Expr ScriptParser::readPrimary() {
 
   if (consume("~")) {
     Expr e = readPrimary();
-    return [=] { return ~e().getValue(); };
+    return DynamicExpr::create([=] { return ~e().getValue(); });
   }
   if (consume("!")) {
     Expr e = readPrimary();
-    return [=] { return !e().getValue(); };
+    return DynamicExpr::create([=] { return !e().getValue(); });
   }
   if (consume("-")) {
     Expr e = readPrimary();
-    return [=] { return -e().getValue(); };
+    return DynamicExpr::create([=] { return -e().getValue(); });
   }
 
   StringRef tok = next();
@@ -1495,44 +1506,45 @@ Expr ScriptParser::readPrimary() {
   // https://sourceware.org/binutils/docs/ld/Builtin-Functions.html.
   if (tok == "ABSOLUTE") {
     Expr inner = readParenExpr();
-    return [=] {
+    return DynamicExpr::create([=] {
       ExprValue i = inner();
       i.forceAbsolute = true;
       return i;
-    };
+    });
   }
   if (tok == "ADDR") {
     StringRef name = readParenName();
     OutputSection *osec = &script->getOrCreateOutputSection(name)->osec;
     osec->usedInExpression = true;
-    return [=]() -> ExprValue {
+    return DynamicExpr::create([=]() -> ExprValue {
       checkIfExists(*osec, location);
       return {osec, false, 0, location};
-    };
+    });
   }
   if (tok == "ALIGN") {
     expect("(");
     Expr e = readExpr();
     if (consume(")")) {
       e = checkAlignment(e, location);
-      return [=] { return alignToPowerOf2(script->getDot(), e().getValue()); };
+      return DynamicExpr::create(
+          [=] { return alignToPowerOf2(script->getDot(), e().getValue()); });
     }
     expect(",");
     Expr e2 = checkAlignment(readExpr(), location);
     expect(")");
-    return [=] {
+    return DynamicExpr::create([=] {
       ExprValue v = e();
       v.alignment = e2().getValue();
       return v;
-    };
+    });
   }
   if (tok == "ALIGNOF") {
     StringRef name = readParenName();
     OutputSection *osec = &script->getOrCreateOutputSection(name)->osec;
-    return [=] {
+    return DynamicExpr::create([=] {
       checkIfExists(*osec, location);
       return osec->addralign;
-    };
+    });
   }
   if (tok == "ASSERT")
     return readAssert();
@@ -1545,16 +1557,16 @@ Expr ScriptParser::readPrimary() {
     readExpr();
     expect(")");
     script->seenDataAlign = true;
-    return [=] {
+    return DynamicExpr::create([=] {
       uint64_t align = std::max(uint64_t(1), e().getValue());
       return (script->getDot() + align - 1) & -align;
-    };
+    });
   }
   if (tok == "DATA_SEGMENT_END") {
     expect("(");
     expect(".");
     expect(")");
-    return [] { return script->getDot(); };
+    return DynamicExpr::create([] { return script->getDot(); });
   }
   if (tok == "DATA_SEGMENT_RELRO_END") {
     // GNU linkers implements more complicated logic to handle
@@ -1566,24 +1578,25 @@ Expr ScriptParser::readPrimary() {
     readExpr();
     expect(")");
     script->seenRelroEnd = true;
-    return [=] { return alignToPowerOf2(script->getDot(), config->maxPageSize); };
+    return DynamicExpr::create(
+        [=] { return alignToPowerOf2(script->getDot(), config->maxPageSize); });
   }
   if (tok == "DEFINED") {
     StringRef name = readParenName();
     // Return 1 if s is defined. If the definition is only found in a linker
     // script, it must happen before this DEFINED.
     auto order = ctx.scriptSymOrderCounter++;
-    return [=] {
+    return DynamicExpr::create([=] {
       Symbol *s = symtab.find(name);
       return s && s->isDefined() && ctx.scriptSymOrder.lookup(s) < order ? 1
                                                                          : 0;
-    };
+    });
   }
   if (tok == "LENGTH") {
     StringRef name = readParenName();
     if (script->memoryRegions.count(name) == 0) {
       setError("memory region not defined: " + name);
-      return [] { return 0; };
+      return DynamicExpr::create([] { return 0; });
     }
     return script->memoryRegions[name]->length;
   }
@@ -1591,19 +1604,19 @@ Expr ScriptParser::readPrimary() {
     StringRef name = readParenName();
     OutputSection *osec = &script->getOrCreateOutputSection(name)->osec;
     osec->usedInExpression = true;
-    return [=] {
+    return DynamicExpr::create([=] {
       checkIfExists(*osec, location);
       return osec->getLMA();
-    };
+    });
   }
   if (tok == "LOG2CEIL") {
     expect("(");
     Expr a = readExpr();
     expect(")");
-    return [=] {
+    return DynamicExpr::create([=] {
       // LOG2CEIL(0) is defined to be 0.
       return llvm::Log2_64_Ceil(std::max(a().getValue(), UINT64_C(1)));
-    };
+    });
   }
   if (tok == "MAX" || tok == "MIN") {
     expect("(");
@@ -1612,14 +1625,16 @@ Expr ScriptParser::readPrimary() {
     Expr b = readExpr();
     expect(")");
     if (tok == "MIN")
-      return [=] { return std::min(a().getValue(), b().getValue()); };
-    return [=] { return std::max(a().getValue(), b().getValue()); };
+      return DynamicExpr::create(
+          [=] { return std::min(a().getValue(), b().getValue()); });
+    return DynamicExpr::create(
+        [=] { return std::max(a().getValue(), b().getValue()); });
   }
   if (tok == "ORIGIN") {
     StringRef name = readParenName();
     if (script->memoryRegions.count(name) == 0) {
       setError("memory region not defined: " + name);
-      return [] { return 0; };
+      return DynamicExpr::create([] { return 0; });
     }
     return script->memoryRegions[name]->origin;
   }
@@ -1629,7 +1644,7 @@ Expr ScriptParser::readPrimary() {
     expect(",");
     Expr e = readExpr();
     expect(")");
-    return [=] { return e(); };
+    return DynamicExpr::create([=] { return e(); });
   }
   if (tok == "SIZEOF") {
     StringRef name = readParenName();
@@ -1637,18 +1652,19 @@ Expr ScriptParser::readPrimary() {
     // Linker script does not create an output section if its content is empty.
     // We want to allow SIZEOF(.foo) where .foo is a section which happened to
     // be empty.
-    return [=] { return cmd->size; };
+    return DynamicExpr::create([=] { return cmd->size; });
   }
   if (tok == "SIZEOF_HEADERS")
-    return [=] { return elf::getHeaderSize(); };
+    return DynamicExpr::create([=] { return elf::getHeaderSize(); });
 
   // Tok is the dot.
   if (tok == ".")
-    return [=] { return script->getSymbolValue(tok, location); };
+    return DynamicExpr::create(
+        [=] { return script->getSymbolValue(tok, location); });
 
   // Tok is a literal number.
   if (std::optional<uint64_t> val = parseInt(tok))
-    return [=] { return *val; };
+    return DynamicExpr::create([=] { return *val; });
 
   // Tok is a symbol name.
   if (tok.starts_with("\""))
@@ -1659,14 +1675,15 @@ Expr ScriptParser::readPrimary() {
     script->provideMap[*activeProvideSym].push_back(tok);
   else
     script->referencedSymbols.push_back(tok);
-  return [=] { return script->getSymbolValue(tok, location); };
+  return DynamicExpr::create(
+      [=] { return script->getSymbolValue(tok, location); });
 }
 
 Expr ScriptParser::readTernary(Expr cond) {
   Expr l = readExpr();
   expect(":");
   Expr r = readExpr();
-  return [=] { return cond().getValue() ? l() : r(); };
+  return DynamicExpr::create([=] { return cond().getValue() ? l() : r(); });
 }
 
 Expr ScriptParser::readParenExpr() {
@@ -1814,7 +1831,7 @@ Expr ScriptParser::readMemoryAssignment(StringRef s1, StringRef s2,
                                         StringRef s3) {
   if (!consume(s1) && !consume(s2) && !consume(s3)) {
     setError("expected one of: " + s1 + ", " + s2 + ", or " + s3);
-    return [] { return 0; };
+    return DynamicExpr::create([] { return 0; });
   }
   expect("=");
   return readExpr();

@@ -131,6 +131,15 @@ uint64_t ExprValue::getSectionOffset() const {
   return getValue() - getSecAddr();
 }
 
+ExprValue Expr::operator()() const {
+  if (kind_ == Kind::Constant) {
+    return static_cast<const ConstExpr *>(this)->getExprValue();
+  }
+  return static_cast<const DynamicExpr *>(this)->getExprValue();
+}
+
+bool Expr::operator&&(bool other) const { return kind_ != Kind::None && other; }
+
 OutputDesc *LinkerScript::createOutputSection(StringRef name,
                                               StringRef location) {
   OutputDesc *&secRef = nameToOutputSection[CachedHashStringRef(name)];
@@ -718,7 +727,7 @@ void LinkerScript::processSectionCommands() {
     // Handle subalign (e.g. ".foo : SUBALIGN(32) { ... }"). If subalign
     // is given, input sections are aligned to that value, whether the
     // given value is larger or smaller than the original section alignment.
-    if (osec->subalignExpr) {
+    if (osec->subalignExpr.isValid()) {
       uint32_t subalign = osec->subalignExpr().getValue();
       for (InputSectionBase *s : v)
         s->addralign = subalign;
@@ -1058,7 +1067,8 @@ void LinkerScript::diagnoseMissingSGSectionAddress() const {
     return;
 
   OutputSection *sec = findByName(sectionCommands, ".gnu.sgstubs");
-  if (sec && !sec->addrExpr && !config->sectionStartMap.count(".gnu.sgstubs"))
+  if (sec && !(sec->addrExpr.isValid()) &&
+      !config->sectionStartMap.count(".gnu.sgstubs"))
     error("no address assigned to the veneers output section " + sec->name);
 }
 
@@ -1144,7 +1154,7 @@ bool LinkerScript::assignOffsets(OutputSection *sec) {
   } else {
     if (state->memRegion)
       dot = state->memRegion->curPos;
-    if (sec->addrExpr)
+    if (sec->addrExpr.isValid())
       setDot(sec->addrExpr, sec->location, false);
 
     // If the address of the section has been moved forward by an explicit
@@ -1173,7 +1183,7 @@ bool LinkerScript::assignOffsets(OutputSection *sec) {
   // reuse previous lmaOffset; otherwise, reset lmaOffset to 0. This emulates
   // heuristics described in
   // https://sourceware.org/binutils/docs/ld/Output-Section-LMA.html
-  if (sec->lmaExpr) {
+  if (sec->lmaExpr.isValid()) {
     state->lmaOffset = sec->lmaExpr().getValue() - dot;
   } else if (MemoryRegion *mr = sec->lmaRegion) {
     uint64_t lmaStart = alignToPowerOf2(mr->curPos, sec->addralign);
@@ -1325,7 +1335,7 @@ void LinkerScript::adjustOutputSections() {
     auto *sec = &cast<OutputDesc>(cmd)->osec;
 
     // Handle align (e.g. ".foo : ALIGN(16) { ... }").
-    if (sec->alignExpr)
+    if (sec->alignExpr.isValid())
       sec->addralign =
           std::max<uint32_t>(sec->addralign, sec->alignExpr().getValue());
 
@@ -1643,7 +1653,7 @@ SmallVector<PhdrEntry *, 0> LinkerScript::createPhdrs() {
     if (cmd.hasPhdrs)
       phdr->add(ctx.out.programHeaders);
 
-    if (cmd.lmaExpr) {
+    if (cmd.lmaExpr.isValid()) {
       phdr->p_paddr = cmd.lmaExpr().getValue();
       phdr->hasLMA = true;
     }
