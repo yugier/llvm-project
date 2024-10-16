@@ -262,7 +262,17 @@ namespace CallingConv {
     ARM64EC_Thunk_Native = 109,
 
     /// The highest possible ID. Must be some 2^k - 1.
-    MaxID = 1023
+    MaxID = 1023,
+
+    /// The following conventions are used for custom calling conventions for
+    /// AAarch64
+    /// that allows for explicit register of function arguments and return
+    /// values.
+    /// It is inspired by IDA Pro's __usercall syntax and is designed to aid in
+    /// reverse engineering
+    /// and low-level programming tasks. The calling convention is not intended
+    /// for general use.
+    CC_AArch64_CustomReg = 110
   };
 
 } // end namespace CallingConv
