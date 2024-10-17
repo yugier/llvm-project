@@ -692,3 +692,37 @@ def CSR_AArch64_SVE_AAPCS_SCS
     : CalleeSavedRegs<(add CSR_AArch64_SVE_AAPCS, X18)>;
 def CSR_AArch64_AAPCS_SCS
     : CalleeSavedRegs<(add CSR_AArch64_AAPCS, X18)>;
+
+
+//===----------------------------------------------------------------------===//
+// AArch64 Custom Register Calling Convention
+//===----------------------------------------------------------------------===//
+//
+// This calling convention allows for explicit register allocation of function
+// arguments and return values. It is designed to support reverse engineering
+// efforts and low-level programming tasks where precise control over register
+// usage is required.
+//
+// Key features:
+// - Allows specifying exact registers for function arguments and return values
+// - Supports both general-purpose (X0-X30) and floating-point/SIMD (V0-V31) registers
+// - Falls back to standard AAPCS rules for unspecified arguments
+//
+// Usage:
+// Functions using this calling convention should be declared with the
+// appropriate attribute (e.g., __attribute__((aarch64_customreg))).
+// Individual arguments can be assigned to specific registers using custom syntax.
+//
+def CC_AArch64_CustomReg : CallingConv<[
+  // Convert pointers to i64 for consistent handling
+  CCIfType<[iPTR], CCBitConvertToType<i64>>,
+
+  // Promote smaller integer types to i32
+  CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
+
+  /// Use a single custom handler for all types
+  CCCustom<"CC_AArch64_CustomReg_Handler">,
+
+  // For any unhandled types, fall back to the standard AAPCS
+  CCDelegateTo<CC_AArch64_AAPCS>
+]>;

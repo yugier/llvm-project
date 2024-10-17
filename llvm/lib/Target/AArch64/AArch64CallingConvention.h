@@ -14,6 +14,7 @@
 #define LLVM_LIB_TARGET_AARCH64_AARCH64CALLINGCONVENTION_H
 
 #include "llvm/CodeGen/CallingConvLower.h"
+#include "llvm/CodeGen/TargetCallingConv.h"
 
 namespace llvm {
 bool CC_AArch64_AAPCS(unsigned ValNo, MVT ValVT, MVT LocVT,
@@ -62,6 +63,9 @@ bool RetCC_AArch64_Arm64EC_CFGuard_Check(unsigned ValNo, MVT ValVT, MVT LocVT,
                                          CCValAssign::LocInfo LocInfo,
                                          ISD::ArgFlagsTy ArgFlags,
                                          CCState &State);
+bool CC_AArch64_CustomReg(unsigned ValNo, MVT ValVT, MVT LocVT,
+                          CCValAssign::LocInfo LocInfo,
+                          ISD::ArgFlagsTy ArgFlags, CCState &State);
 } // namespace llvm
 
 #endif

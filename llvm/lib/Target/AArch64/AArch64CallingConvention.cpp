@@ -15,9 +15,11 @@
 #include "AArch64.h"
 #include "AArch64InstrInfo.h"
 #include "AArch64Subtarget.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/IR/CallingConv.h"
+#include "llvm/IR/FMF.h"
 using namespace llvm;
 
 static const MCPhysReg XRegList[] = {AArch64::X0, AArch64::X1, AArch64::X2,
@@ -200,6 +202,55 @@ static bool CC_AArch64_Custom_Block(unsigned &ValNo, MVT &ValVT, MVT &LocVT,
     SlotAlign = std::max(SlotAlign, Align(8));
 
   return finishStackBlock(PendingMembers, LocVT, ArgFlags, State, SlotAlign);
+}
+
+static bool CC_AArch64_CustomReg_Handler(unsigned ValNo, MVT ValVT, MVT LocVT,
+                                         CCValAssign::LocInfo LocInfo,
+                                         ISD::ArgFlagsTy ArgFlags,
+                                         CCState &State) {
+  MachineFunction &MF = State.getMachineFunction();
+  const Function &F = MF.getFunction();
+
+  if (!F.hasFnAttribute("aarch64_custom_reg"))
+    return false;
+
+  StringRef CustomRegAlloc =
+      F.getFnAttribute("aarch64_custom_reg").getValueAsString();
+  SmallVector<StringRef, 8> RegSpecs;
+  CustomRegAlloc.split(RegSpecs, ',');
+
+  if (ValNo >= RegSpecs.size())
+    return false;
+
+  StringRef RegSpec = RegSpecs[ValNo].trim();
+
+  // Parse the register specifciation
+  if (RegSpec.starts_with("X") || RegSpec.starts_with("W")) {
+    unsigned RegNum;
+    RegSpec.substr(1).getAsInteger(10, RegNum);
+    if (RegNum <= 30) {
+      unsigned Reg = RegSpec.starts_with("X") ? AArch64::X0 + RegNum
+                                              : AArch64::W0 + RegNum;
+      State.AllocateReg(Reg);
+      return true;
+    }
+  } else if (RegSpec.starts_with("V") || RegSpec.starts_with("Q") ||
+             RegSpec.starts_with("D") || RegSpec.starts_with("S")) {
+    unsigned RegNum;
+    RegSpec.substr(1).getAsInteger(10, RegNum);
+    if (RegNum <= 31) {
+      unsigned Reg = 0;
+      if (RegSpec.starts_with("V") || RegSpec.starts_with("Q"))
+        Reg = AArch64::Q0 + RegNum;
+      else if (RegSpec.starts_with("D"))
+        Reg = AArch64::D0 + RegNum;
+      else
+        Reg = AArch64::S0 + RegNum;
+      State.AllocateReg(Reg);
+      return true;
+    }
+  }
+  return false;
 }
 
 // TableGen provides definitions of the calling convention analysis entry

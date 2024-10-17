@@ -1463,3 +1463,14 @@ bool Sema::checkCommonAttributeFeatures(const Stmt *S, const ParsedAttr &A,
                                         bool SkipArgCountCheck) {
   return ::checkCommonAttributeFeatures(*this, S, A, SkipArgCountCheck);
 }
+
+static void handleAArch64CustomRegAttr(Sema &S, Decl *D,
+                                       const AttributeList &Attr) {
+  StringRef RegAlloc;
+  if (S.checkStringLiteralArgumentAttr(Attr, 0, RegAlloc))
+    return;
+
+  D->addAttr(::new (S.Context)
+                 AArch64CustomRegAttr(Attr.getRange(), S.Context, RegAlloc),
+             Attr.getAttributeSpllingListIndex());
+}
