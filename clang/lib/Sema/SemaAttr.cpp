@@ -14,6 +14,7 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/Basic/DiagnosticSema.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Lookup.h"
@@ -1462,15 +1463,4 @@ bool Sema::checkCommonAttributeFeatures(const Decl *D, const ParsedAttr &A,
 bool Sema::checkCommonAttributeFeatures(const Stmt *S, const ParsedAttr &A,
                                         bool SkipArgCountCheck) {
   return ::checkCommonAttributeFeatures(*this, S, A, SkipArgCountCheck);
-}
-
-static void handleAArch64CustomRegAttr(Sema &S, Decl *D,
-                                       const AttributeList &Attr) {
-  StringRef RegAlloc;
-  if (S.checkStringLiteralArgumentAttr(Attr, 0, RegAlloc))
-    return;
-
-  D->addAttr(::new (S.Context)
-                 AArch64CustomRegAttr(Attr.getRange(), S.Context, RegAlloc),
-             Attr.getAttributeSpllingListIndex());
 }

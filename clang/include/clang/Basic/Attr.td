@@ -4461,12 +4461,12 @@ def CountedBy : InheritableAttr {
 
 def AArch64CustomReg : InheritableAttr {
   let Spellings = [GNU<"aarch64_custom_reg">];
-  let Args = [StringArgument<"RegAlloc">];
+  let Args = [StringArgument<"RegSpecs">];
   let Subjects = SubjectList<[Function]>;
   let Documentation = [Undocumented];
   let AdditionalMembers = [{
     void printPretty(raw_ostream &OS, const PrintingPolicy &Policy) const {
-      OS << "(\"" << getRegAlloc() << "\")";
+      OS << "(\"" << RegSpecs() << "\")";
     }
   }];
 }

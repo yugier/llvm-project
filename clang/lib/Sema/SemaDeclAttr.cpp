@@ -25,6 +25,7 @@
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/DarwinSDKInfo.h"
+#include "clang/Basic/DiagnosticSema.h"
 #include "clang/Basic/HLSLRuntime.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceLocation.h"
@@ -9033,6 +9034,25 @@ static void handleArmNewAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
                  ArmNewAttr(S.Context, AL, NewState.data(), NewState.size()));
 }
 
+static void handleAArch64CustomRegAttr(Sema &S, Decl *D, const ParsedAttr &Attr) {
+  if (!checkAttributeNumArgs(S, Attr, 1))
+    return;
+
+  StringRef RegSpecs;
+  if (!S.checkStringLiteralArgumentAttr(Attr, 0, RegSpecs))
+    return;
+
+  // Validate the attribute string format
+  if (!RegSpecs.contains(":")) {
+    S.Diag(Attr.getLoc(), diag::err_attribute_argument_invalid)
+      << Attr << 1;
+    return;
+  }
+
+  D->addAttr(AArch64CustomRegAttr::Create(S.Context, RegSpecs, Attr.getRange(),
+                                          Attr.getAttributeSpellingListIndex()));
+}
+
 /// ProcessDeclAttribute - Apply the specific attribute to the specified decl if
 /// the attribute applies to decls.  If the attribute is a type attribute, just
 /// silently ignore it if a GNU attribute.
@@ -9850,6 +9870,10 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
 
   case ParsedAttr::AT_UsingIfExists:
     handleSimpleAttribute<UsingIfExistsAttr>(S, D, AL);
+    break;
+
+  case ParsedAttr::AT_AArch64CustomReg:
+    handleAArch64CustomRegAttr(S, D, AL);
     break;
   }
 }
