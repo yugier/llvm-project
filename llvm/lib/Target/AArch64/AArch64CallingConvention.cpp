@@ -204,35 +204,25 @@ static bool CC_AArch64_Custom_Block(unsigned &ValNo, MVT &ValVT, MVT &LocVT,
   return finishStackBlock(PendingMembers, LocVT, ArgFlags, State, SlotAlign);
 }
 
-static bool allocateCustomReg(StringRef RegSpec, CCState &State) {
-  if (RegSpec.empty())
-    return false;
-
-  if (RegSpec.starts_with("X") || RegSpec.starts_with("W")) {
-    unsigned RegNum;
-    RegSpec.substr(1).getAsInteger(10, RegNum);
-    if (RegNum <= 30) {
-      unsigned Reg = RegSpec.starts_with("X")? AArch64::X0 + RegNum : AArch64::W0 + RegNum;
-      State.AllocateReg(Reg);
-      return true;
-    }
-  } else if (RegSpec.starts_with("V") || RegSpec.starts_with("Q") ||
-             RegSpec.starts_with("D") || RegSpec.starts_with("S")) {
-      unsigned RegNum;
-      RegSpec.substr(1).getAsInteger(10, RegNum);
-      if (RegNum <= 31) {
-        unsigned Reg;
-        if (RegSpec.starts_with("V") || RegSpec.starts_with("Q"))
-          Reg = AArch64::Q0 + RegNum;
-        else if (RegSpec.starts_with("D"))
-          Reg = AArch64::D0 + RegNum;
-        else
-          Reg = AArch64::S0 + RegNum;
-        State.AllocateReg(Reg);
-        return true;
-      }
+static unsigned parseRegister(StringRef RegSpec) {
+  unsigned RegNum;
+  if (RegSpec.starts_with("X")) {
+    if (!RegSpec.substr(1).getAsInteger(10, RegNum) && RegNum <= 30)
+      return AArch64::X0 + RegNum;
+  } else if (RegSpec.starts_with("W")) {
+    if (!RegSpec.substr(1).getAsInteger(10, RegNum) && RegNum <= 30)
+      return AArch64::W0 + RegNum;
+  } else if (RegSpec.starts_with("Q")) {
+    if (!RegSpec.substr(1).getAsInteger(10, RegNum) && RegNum <= 31)
+      return AArch64::Q0 + RegNum;
+  } else if (RegSpec.starts_with("D")) {
+    if (!RegSpec.substr(1).getAsInteger(10, RegNum) && RegNum <= 31)
+      return AArch64::D0 + RegNum;
+  } else if (RegSpec.starts_with("S")) {
+    if (!RegSpec.substr(1).getAsInteger(10, RegNum) && RegNum <= 31)
+      return AArch64::S0 + RegNum;
   }
-  return false;
+  return AArch64::NoRegister;
 }
 
 static bool CC_AArch64_CustomReg_Handler(unsigned ValNo, MVT ValVT, MVT LocVT,
@@ -251,21 +241,27 @@ static bool CC_AArch64_CustomReg_Handler(unsigned ValNo, MVT ValVT, MVT LocVT,
   StringRef RetSpec = Parts.first.trim();
   StringRef ArgSpec = Parts.second.trim();
 
+  SmallVector<StringRef, 8> ArgRegs;
+  ArgSpec.split(ArgRegs, ',');
+
   if (ArgFlags.isReturned()) {
     if (RetSpec != "void") {
-      if (allocateCustomReg(RetSpec, State))
+      unsigned Reg = parseRegister(RetSpec);
+      if (Reg != AArch64::NoRegister) {
+        State.addLoc(CCValAssign::getReg(ValNo, ValVT, Reg, LocVT, LocInfo));
         return true;
+      }
     }
-  } else {
-    SmallVector<StringRef, 8> ArgRegs;
-    ArgSpec.split(ArgRegs, ',');
-
-    if (ValNo < ArgRegs.size()) {
-      StringRef RegSpec = ArgRegs[ValNo].trim();
-      if (allocateCustomReg(RegSpec, State))
-        return true;
+  } else if (ValNo < ArgRegs.size()) {
+    StringRef RegSpec = ArgRegs[ValNo].trim();
+    unsigned Reg = parseRegister(RegSpec);
+    if (Reg != AArch64::NoRegister) {
+      State.addLoc(CCValAssign::getReg(ValNo, ValVT, Reg, LocVT, LocInfo));
+      return true;
     }
   }
+
+  return false;
 }
 
 // TableGen provides definitions of the calling convention analysis entry

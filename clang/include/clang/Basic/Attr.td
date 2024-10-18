@@ -4464,9 +4464,4 @@ def AArch64CustomReg : InheritableAttr {
   let Args = [StringArgument<"RegSpecs">];
   let Subjects = SubjectList<[Function]>;
   let Documentation = [Undocumented];
-  let AdditionalMembers = [{
-    void printPretty(raw_ostream &OS, const PrintingPolicy &Policy) const {
-      OS << "(\"" << RegSpecs() << "\")";
-    }
-  }];
 }

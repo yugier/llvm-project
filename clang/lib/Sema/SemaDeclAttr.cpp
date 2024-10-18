@@ -9035,8 +9035,10 @@ static void handleArmNewAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
 }
 
 static void handleAArch64CustomRegAttr(Sema &S, Decl *D, const ParsedAttr &Attr) {
-  if (!checkAttributeNumArgs(S, Attr, 1))
+  if (Attr.getNumArgs() != 1) {
+    S.Diag(Attr.getLoc(), diag::err_attribute_wrong_number_arguments);
     return;
+  }
 
   StringRef RegSpecs;
   if (!S.checkStringLiteralArgumentAttr(Attr, 0, RegSpecs))
@@ -9049,8 +9051,8 @@ static void handleAArch64CustomRegAttr(Sema &S, Decl *D, const ParsedAttr &Attr)
     return;
   }
 
-  D->addAttr(AArch64CustomRegAttr::Create(S.Context, RegSpecs, Attr.getRange(),
-                                          Attr.getAttributeSpellingListIndex()));
+  D->addAttr(
+      AArch64CustomRegAttr::Create(S.Context, RegSpecs, Attr.getRange()));
 }
 
 /// ProcessDeclAttribute - Apply the specific attribute to the specified decl if
