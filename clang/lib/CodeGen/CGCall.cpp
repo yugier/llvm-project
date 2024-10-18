@@ -2936,6 +2936,18 @@ void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
     // Naked functions don't have prologues.
     return;
 
+  // Check if the function has the "aarch64_custom_reg" attribute
+  const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(CurCodeDecl);
+  if (FD && FD->hasAttr<AArch64CustomRegAttr>()) {
+    const AArch64CustomRegAttr *Attr = FD->getAttr<AArch64CustomRegAttr>();
+    StringRef RegSpecs = Attr->getRegSpecs();
+    // Add the attribute value as metadata to the LLVM function
+    llvm::LLVMContext &Ctx = Fn->getContext();
+    llvm::MDString *MetadataStr = llvm::MDString::get(Ctx, RegSpecs);
+    llvm::MDNode *MetadataNode = llvm::MDNode::get(Ctx, MetadataStr);
+    Fn->setMetadata("aarch64_custom_reg", MetadataNode);
+  }
+
   // If this is an implicit-return-zero function, go ahead and
   // initialize the return value.  TODO: it might be nice to have
   // a more general mechanism for this that didn't require synthesized

@@ -9035,24 +9035,30 @@ static void handleArmNewAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
 }
 
 static void handleAArch64CustomRegAttr(Sema &S, Decl *D, const ParsedAttr &Attr) {
-  if (Attr.getNumArgs() != 1) {
-    S.Diag(Attr.getLoc(), diag::err_attribute_wrong_number_arguments);
+  if (!isa<FunctionDecl>(D)) {
+    S.Diag(Attr.getLoc(), diag::err_attribute_wrong_decl_type)
+        << Attr << ExpectedFunction;
     return;
   }
 
-  StringRef RegSpecs;
-  if (!S.checkStringLiteralArgumentAttr(Attr, 0, RegSpecs))
-    return;
+  FunctionDecl *FD = cast<FunctionDecl>(D);
 
-  // Validate the attribute string format
-  if (!RegSpecs.contains(":")) {
+  // Validate the attribute arguments
+  // if (!Attr.isArgIdent(0)) {
+  //     S.Diag(Attr.getLoc(), diag::err_attribute_argument_n_type)
+  //         << Attr << 1 << AANT_ArgumentIdentifier;
+  //     return;
+  // }
+
+  StringRef RegSpec = Attr.getArgAsIdent(0)->Ident->getName();
+  if (RegSpec.empty()) {
     S.Diag(Attr.getLoc(), diag::err_attribute_argument_invalid)
-      << Attr << 1;
+        << Attr << "Expected register specification";
     return;
   }
 
-  D->addAttr(
-      AArch64CustomRegAttr::Create(S.Context, RegSpecs, Attr.getRange()));
+  // Attach the attribute to the function
+  FD->addAttr(::new (S.Context) AArch64CustomRegAttr(S.Context, Attr, RegSpec));
 }
 
 /// ProcessDeclAttribute - Apply the specific attribute to the specified decl if

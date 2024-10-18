@@ -225,10 +225,9 @@ static unsigned parseRegister(StringRef RegSpec) {
   return AArch64::NoRegister;
 }
 
-static bool CC_AArch64_CustomReg_Handler(unsigned ValNo, MVT ValVT, MVT LocVT,
-                                         CCValAssign::LocInfo LocInfo,
-                                         ISD::ArgFlagsTy ArgFlags,
-                                         CCState &State) {
+bool CC_AArch64_CustomReg_Handler(unsigned ValNo, MVT ValVT, MVT LocVT,
+                                  CCValAssign::LocInfo LocInfo,
+                                  ISD::ArgFlagsTy ArgFlags, CCState &State) {
   MachineFunction &MF = State.getMachineFunction();
   const Function &F = MF.getFunction();
 
